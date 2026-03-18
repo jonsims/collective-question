@@ -11,6 +11,11 @@ const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/', (req, res) => res.redirect('/submit'));
+app.get('/submit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'submit.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
+
 // ─── In-memory session state ────────────────────────────────────────────────
 
 let session = {
