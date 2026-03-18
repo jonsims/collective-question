@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const path = require('path');
+const QRCode = require('qrcode');
 
 const app = express();
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -51,6 +52,23 @@ function careerDistribution() {
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
+
+// QR code — generated locally, no external dependency
+app.get('/api/qr', async (req, res) => {
+  const url = req.query.url || `${req.protocol}://${req.get('host')}/submit`;
+  try {
+    const svg = await QRCode.toString(url, { type: 'svg', color: { dark: '#006341', light: '#ffffff' }, width: 300 });
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.send(svg);
+  } catch (err) {
+    res.status(500).send('QR error');
+  }
+});
+
+// Total submission count (careers submitted = one form submitted)
+app.get('/api/count', (req, res) => {
+  res.json({ total: session.careers.length });
+});
 
 // Submit form
 app.post('/api/submit', (req, res) => {
