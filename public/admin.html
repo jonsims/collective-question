@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — The Collective Question</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a1a; color: #eee; min-height: 100vh; }
+
+    /* PIN gate */
+    #pin-gate {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; flex-direction: column; gap: 16px;
+    }
+    #pin-gate h2 { color: #4CAF7D; font-size: 1.4rem; }
+    #pin-input {
+      padding: 12px 20px; font-size: 1.5rem; text-align: center;
+      border: 2px solid #444; border-radius: 8px; background: #2a2a2a;
+      color: white; width: 160px; letter-spacing: 0.3em;
+    }
+    #pin-btn {
+      padding: 12px 32px; background: #006341; color: white;
+      border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;
+    }
+    #pin-error { color: #f88; font-size: 0.9rem; }
+
+    /* Main layout */
+    #app { display: none; }
+    header {
+      background: #006341; padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    header h1 { font-size: 1rem; font-weight: 700; color: white; }
+    .header-actions { display: flex; gap: 10px; }
+
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-green { background: #4CAF7D; color: #1a1a1a; }
+    .btn-white { background: white; color: #006341; }
+    .btn-red { background: #c0392b; color: white; }
+    .btn-gray { background: #444; color: #eee; }
+    .btn-lg { padding: 14px 24px; font-size: 1rem; width: 100%; margin-bottom: 10px; }
+
+    .main { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; max-width: 1200px; margin: 0 auto; }
+
+    .panel { background: #2a2a2a; border-radius: 10px; padding: 18px; }
+    .panel h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: #4CAF7D; margin-bottom: 14px; }
+
+    /* Stats */
+    .stats { display: flex; gap: 16px; margin-bottom: 8px; }
+    .stat { background: #333; border-radius: 8px; padding: 12px 16px; flex: 1; text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 700; color: #4CAF7D; }
+    .stat-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* Career chart */
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.85rem; }
+    .bar-label { width: 160px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+    .bar-track { flex: 1; background: #444; border-radius: 4px; height: 14px; }
+    .bar-fill { background: #006341; height: 14px; border-radius: 4px; transition: width 0.5s; min-width: 2px; }
+    .bar-count { width: 24px; text-align: right; color: #888; font-size: 0.8rem; }
+
+    /* Questions list */
+    .q-list { max-height: 300px; overflow-y: auto; }
+    .q-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #333; font-size: 0.85rem; color: #ddd; }
+    .q-item:last-child { border-bottom: none; }
+    .q-num { color: #555; flex-shrink: 0; width: 20px; }
+    .q-text { flex: 1; line-height: 1.4; }
+    .q-del { background: none; border: none; color: #555; cursor: pointer; font-size: 1rem; padding: 0 4px; flex-shrink: 0; }
+    .q-del:hover { color: #f88; }
+
+    /* Talents list */
+    .talent-list { max-height: 160px; overflow-y: auto; }
+    .talent-item { font-size: 0.82rem; color: #bbb; padding: 4px 0; border-bottom: 1px solid #333; line-height: 1.4; }
+
+    /* Display controls */
+    .display-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .display-btn { padding: 10px; background: #333; border: 2px solid transparent; border-radius: 8px; color: #ccc; font-size: 0.8rem; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .display-btn:hover { border-color: #4CAF7D; color: white; }
+    .display-btn.active { border-color: #4CAF7D; background: #1a3a2a; color: #4CAF7D; font-weight: 700; }
+
+    /* Synthesis results */
+    .result-box { background: #1a2a1a; border: 1px solid #2a4a2a; border-radius: 8px; padding: 14px; margin-top: 10px; font-size: 0.85rem; line-height: 1.6; color: #ccc; }
+    .result-label { font-size: 0.7rem; text-transform: uppercase; color: #4CAF7D; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .cluster-item { margin-bottom: 6px; }
+    .cluster-label { color: #4CAF7D; font-weight: 600; }
+
+    .spinning { display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .full-col { grid-column: span 2; }
+    @media (max-width: 700px) {
+      .main { grid-template-columns: 1fr; }
+      .full-col { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- PIN gate -->
+<div id="pin-gate">
+  <h2>Admin Access</h2>
+  <input type="password" id="pin-input" placeholder="PIN" maxlength="4" inputmode="numeric"
+    onkeydown="if(event.key==='Enter') checkPin()">
+  <button class="btn btn-green" id="pin-btn" onclick="checkPin()">Enter</button>
+  <div id="pin-error"></div>
+</div>
+
+<!-- Main app -->
+<div id="app">
+  <header>
+    <h1>The Collective Question — Admin</h1>
+    <div class="header-actions">
+      <button class="btn btn-white" onclick="loadTestData()">Load Test Data</button>
+      <button class="btn btn-red" onclick="confirmReset()">Reset Session</button>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <!-- Stats -->
+    <div class="panel full-col">
+      <div class="stats">
+        <div class="stat"><div class="stat-num" id="stat-careers">0</div><div class="stat-label">Careers</div></div>
+        <div class="stat"><div class="stat-num" id="stat-talents">0</div><div class="stat-label">Talents</div></div>
+        <div class="stat"><div class="stat-num" id="stat-questions">0</div><div class="stat-label">Questions</div></div>
+      </div>
+    </div>
+
+    <!-- Career chart -->
+    <div class="panel">
+      <h2>Career Distribution</h2>
+      <div id="career-chart"></div>
+    </div>
+
+    <!-- Hidden talents -->
+    <div class="panel">
+      <h2>Hidden Talents</h2>
+      <div class="talent-list" id="talent-list"></div>
+    </div>
+
+    <!-- Act 1 synthesis -->
+    <div class="panel">
+      <h2>Act 1 — Fun Reveal</h2>
+      <button class="btn btn-green btn-lg" id="act1-btn" onclick="synthesize('act1')">Synthesize Act 1</button>
+      <button class="btn btn-gray btn-lg" id="act1-retry" style="display:none" onclick="synthesize('act1')">↺ Try Again</button>
+      <div id="act1-result"></div>
+    </div>
+
+    <!-- Act 2 synthesis -->
+    <div class="panel">
+      <h2>Act 2 — Meta Question</h2>
+      <button class="btn btn-green btn-lg" id="act2-btn" onclick="synthesize('act2')">Synthesize Act 2</button>
+      <button class="btn btn-gray btn-lg" id="act2-retry" style="display:none" onclick="synthesize('act2')">↺ Try Again</button>
+      <div id="act2-result"></div>
+    </div>
+
+    <!-- Display controls -->
+    <div class="panel">
+      <h2>Display Control</h2>
+      <div class="display-grid" id="display-grid">
+        <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">📱 QR / Collection</button>
+        <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">📊 Career Chart</button>
+        <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">✨ Act 1 Synthesis</button>
+        <button class="display-btn" data-state="raw_questions" onclick="setDisplay('raw_questions')">💬 Raw Questions</button>
+        <button class="display-btn" data-state="clusters" onclick="setDisplay('clusters')">🗂 Clusters</button>
+        <button class="display-btn" data-state="meta_question" onclick="setDisplay('meta_question')">🎯 Meta Question</button>
+        <button class="display-btn" data-state="outlier" onclick="setDisplay('outlier')">🔍 Outlier</button>
+      </div>
+    </div>
+
+    <!-- Questions list -->
+    <div class="panel">
+      <h2>Questions (<span id="q-count">0</span>)</h2>
+      <div class="q-list" id="q-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let pin = '';
+  let currentDisplayState = 'collection';
+  let pollInterval;
+
+  function checkPin() {
+    const input = document.getElementById('pin-input').value;
+    fetch('/api/admin/data', { headers: { 'x-admin-pin': input } })
+      .then(r => {
+        if (r.status === 401) {
+          document.getElementById('pin-error').textContent = 'Wrong PIN. Try again.';
+        } else {
+          pin = input;
+          document.getElementById('pin-gate').style.display = 'none';
+          document.getElementById('app').style.display = 'block';
+          startPolling();
+        }
+      });
+  }
+
+  function startPolling() {
+    refresh();
+    pollInterval = setInterval(refresh, 2000);
+  }
+
+  async function refresh() {
+    try {
+      const r = await fetch('/api/admin/data', { headers: { 'x-admin-pin': pin } });
+      const d = await r.json();
+      updateUI(d);
+    } catch {}
+  }
+
+  function updateUI(d) {
+    document.getElementById('stat-careers').textContent = d.careers.length;
+    document.getElementById('stat-talents').textContent = d.talents.length;
+    document.getElementById('stat-questions').textContent = d.questions.length;
+    document.getElementById('q-count').textContent = d.questions.length;
+
+    // Career chart
+    const maxCount = d.careerDistribution[0]?.count || 1;
+    document.getElementById('career-chart').innerHTML = d.careerDistribution.slice(0, 10).map(({ career, count }) => `
+      <div class="bar-row">
+        <div class="bar-label" title="${career}">${career}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(count/maxCount*100)}%"></div></div>
+        <div class="bar-count">${count}</div>
+      </div>`).join('');
+
+    // Talents
+    document.getElementById('talent-list').innerHTML = d.talents.map(t =>
+      `<div class="talent-item">${escHtml(t)}</div>`).join('');
+
+    // Questions
+    document.getElementById('q-list').innerHTML = d.questions.map((q, i) => `
+      <div class="q-item">
+        <span class="q-num">${i + 1}</span>
+        <span class="q-text">${escHtml(q.text)}</span>
+        <button class="q-del" onclick="deleteQ(${q.id})" title="Delete">✕</button>
+      </div>`).join('');
+
+    // Display state buttons
+    currentDisplayState = d.displayState;
+    document.querySelectorAll('.display-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.state === d.displayState);
+    });
+
+    // Act 1 result
+    if (d.act1Result) {
+      document.getElementById('act1-retry').style.display = 'block';
+      document.getElementById('act1-result').innerHTML = `
+        <div class="result-box">
+          <div class="result-label">Career line</div>
+          <div style="margin-bottom:12px">${escHtml(d.act1Result.career_line)}</div>
+          <div class="result-label">Talent portrait</div>
+          <div>${escHtml(d.act1Result.talent_portrait)}</div>
+        </div>`;
+    }
+
+    // Act 2 result
+    if (d.act2Result) {
+      document.getElementById('act2-retry').style.display = 'block';
+      const r = d.act2Result;
+      document.getElementById('act2-result').innerHTML = `
+        <div class="result-box">
+          <div class="result-label">Clusters</div>
+          ${r.clusters.map(c => `<div class="cluster-item"><span class="cluster-label">${escHtml(c.label)}</span> — ${c.count} questions</div>`).join('')}
+          <div class="result-label" style="margin-top:12px">Meta question</div>
+          <div style="margin-bottom:10px;font-style:italic">"${escHtml(r.meta_question)}"</div>
+          <div class="result-label">Outlier</div>
+          <div>"${escHtml(r.outlier_question)}"</div>
+        </div>`;
+    }
+
+    // Synthesizing state
+    if (d.synthesizing?.act1) {
+      document.getElementById('act1-btn').disabled = true;
+      document.getElementById('act1-btn').innerHTML = '<span class="spinning">⟳</span> Synthesizing…';
+    } else {
+      document.getElementById('act1-btn').disabled = false;
+      document.getElementById('act1-btn').textContent = d.act1Result ? 'Re-synthesize Act 1' : 'Synthesize Act 1';
+    }
+    if (d.synthesizing?.act2) {
+      document.getElementById('act2-btn').disabled = true;
+      document.getElementById('act2-btn').innerHTML = '<span class="spinning">⟳</span> Synthesizing…';
+    } else {
+      document.getElementById('act2-btn').disabled = false;
+      document.getElementById('act2-btn').textContent = d.act2Result ? 'Re-synthesize Act 2' : 'Synthesize Act 2';
+    }
+  }
+
+  async function synthesize(act) {
+    await fetch(`/api/admin/synthesize/${act}`, { method: 'POST', headers: { 'x-admin-pin': pin } });
+    refresh();
+  }
+
+  async function setDisplay(state) {
+    await fetch('/api/admin/display', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+      body: JSON.stringify({ state }),
+    });
+    currentDisplayState = state;
+    refresh();
+  }
+
+  async function deleteQ(id) {
+    await fetch(`/api/admin/question/${id}`, { method: 'DELETE', headers: { 'x-admin-pin': pin } });
+    refresh();
+  }
+
+  async function loadTestData() {
+    if (!confirm('This will clear the current session and load test data. Continue?')) return;
+    await fetch('/api/admin/load-test-data', { method: 'POST', headers: { 'x-admin-pin': pin } });
+    refresh();
+  }
+
+  async function confirmReset() {
+    if (!confirm('Reset the session? All data will be cleared.')) return;
+    await fetch('/api/admin/reset', { method: 'POST', headers: { 'x-admin-pin': pin } });
+    refresh();
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.getElementById('pin-input').focus();
+</script>
+</body>
+</html>

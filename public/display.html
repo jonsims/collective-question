@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Display — The Collective Question</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #006341;
+      color: white;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 48px; animation: fadeIn 0.6s ease; }
+    .screen.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Collection screen */
+    #screen-collection { background: #006341; text-align: center; gap: 28px; }
+    #screen-collection img { width: 260px; height: 260px; border-radius: 16px; background: white; padding: 10px; }
+    #screen-collection h2 { font-size: 1.8rem; opacity: 0.9; }
+    #screen-collection .counter { font-size: 4rem; font-weight: 800; }
+    #screen-collection .counter-label { font-size: 1.1rem; opacity: 0.7; letter-spacing: 0.08em; text-transform: uppercase; }
+    #screen-collection .url { font-size: 1.2rem; opacity: 0.6; font-family: monospace; }
+
+    /* Career chart */
+    #screen-career_chart { background: #F5F5F2; color: #1A1A1A; gap: 24px; align-items: flex-start; justify-content: center; width: 100%; }
+    #screen-career_chart h2 { font-size: 2rem; font-weight: 800; color: #006341; align-self: center; }
+    .chart-container { width: 100%; max-width: 860px; }
+    .chart-row { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+    .chart-label { width: 260px; font-size: 1.1rem; color: #333; text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chart-track { flex: 1; background: #ddd; border-radius: 6px; height: 28px; }
+    .chart-fill { background: #006341; height: 28px; border-radius: 6px; transition: width 0.8s ease; min-width: 4px; }
+    .chart-count { width: 36px; font-size: 1rem; font-weight: 700; color: #006341; }
+
+    /* Act 1 synthesis */
+    #screen-act1_synthesis { background: #1A1A1A; gap: 40px; max-width: 900px; margin: 0 auto; text-align: center; }
+    .act1-career { font-size: 1.5rem; color: #4CAF7D; font-style: italic; line-height: 1.5; }
+    .act1-divider { width: 60px; height: 3px; background: #006341; border-radius: 2px; }
+    .act1-portrait { font-size: 1.6rem; line-height: 1.7; color: #eee; }
+
+    /* Raw questions */
+    #screen-raw_questions { background: #1A1A1A; align-items: flex-start; overflow: hidden; width: 100%; padding: 40px 60px; }
+    #screen-raw_questions h2 { font-size: 1.4rem; color: #4CAF7D; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .q-scroll { overflow-y: auto; flex: 1; width: 100%; columns: 2; column-gap: 40px; }
+    .q-scroll-item { font-size: 1rem; color: #ccc; padding: 8px 0; border-bottom: 1px solid #2a2a2a; break-inside: avoid; line-height: 1.4; }
+
+    /* Clusters */
+    #screen-clusters { background: #F5F5F2; color: #1A1A1A; gap: 32px; text-align: center; }
+    #screen-clusters h2 { font-size: 1.8rem; font-weight: 800; color: #006341; }
+    .clusters-grid { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; max-width: 1000px; }
+    .cluster-card { background: #006341; color: white; border-radius: 14px; padding: 28px 32px; flex: 1; min-width: 200px; max-width: 260px; }
+    .cluster-num { font-size: 3.5rem; font-weight: 800; }
+    .cluster-name { font-size: 1rem; opacity: 0.85; margin-top: 6px; line-height: 1.3; }
+    .cluster-example { font-size: 0.8rem; opacity: 0.65; margin-top: 10px; font-style: italic; line-height: 1.4; }
+
+    /* Meta question */
+    #screen-meta_question { background: #006341; text-align: center; gap: 32px; padding: 60px; }
+    #screen-meta_question .eyebrow { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.7; }
+    #screen-meta_question .meta-q { font-size: 2.8rem; font-weight: 800; line-height: 1.3; max-width: 900px; }
+    #screen-meta_question .rationale { font-size: 1rem; opacity: 0.65; max-width: 700px; line-height: 1.6; }
+
+    /* Outlier */
+    #screen-outlier { background: #1A1A1A; text-align: center; gap: 28px; padding: 60px; }
+    #screen-outlier .eyebrow { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.12em; color: #4CAF7D; }
+    #screen-outlier .outlier-q { font-size: 2rem; font-weight: 700; line-height: 1.4; max-width: 800px; color: white; }
+    #screen-outlier .outlier-note { font-size: 1rem; color: #888; max-width: 600px; line-height: 1.6; font-style: italic; }
+
+    /* Loading overlay */
+    #loading {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      align-items: center; justify-content: center; flex-direction: column; gap: 20px; z-index: 100;
+    }
+    #loading.active { display: flex; }
+    .loading-text { font-size: 1.6rem; color: #4CAF7D; }
+    .loading-sub { font-size: 1rem; color: #888; }
+    .dots::after { content: ''; animation: dots 1.4s steps(4, end) infinite; }
+    @keyframes dots { 0%,20%{content:'';} 40%{content:'.';} 60%{content:'..';} 80%,100%{content:'...';} }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading">
+  <div class="loading-text">Reading <span id="loading-count">0</span> responses<span class="dots"></span></div>
+  <div class="loading-sub">Finding the pattern</div>
+</div>
+
+<!-- Collection screen -->
+<div class="screen" id="screen-collection">
+  <img id="qr-img" src="" alt="QR Code">
+  <h2>Scan to participate</h2>
+  <div class="counter" id="collection-count">0</div>
+  <div class="counter-label">responses in the room</div>
+  <div class="url" id="submit-url"></div>
+</div>
+
+<!-- Career chart screen -->
+<div class="screen" id="screen-career_chart">
+  <h2>What did you want to be at age 8?</h2>
+  <div class="chart-container" id="career-chart-display"></div>
+</div>
+
+<!-- Act 1 synthesis screen -->
+<div class="screen" id="screen-act1_synthesis">
+  <div class="act1-career" id="act1-career-line"></div>
+  <div class="act1-divider"></div>
+  <div class="act1-portrait" id="act1-portrait"></div>
+</div>
+
+<!-- Raw questions screen -->
+<div class="screen" id="screen-raw_questions">
+  <h2>What you wanted to ask us</h2>
+  <div class="q-scroll" id="raw-q-list"></div>
+</div>
+
+<!-- Clusters screen -->
+<div class="screen" id="screen-clusters">
+  <h2>Your questions fall into…</h2>
+  <div class="clusters-grid" id="clusters-display"></div>
+</div>
+
+<!-- Meta question screen -->
+<div class="screen" id="screen-meta_question">
+  <div class="eyebrow">The question this room is really asking</div>
+  <div class="meta-q" id="meta-q-text"></div>
+  <div class="rationale" id="meta-q-rationale"></div>
+</div>
+
+<!-- Outlier screen -->
+<div class="screen" id="screen-outlier">
+  <div class="eyebrow">One that didn't fit — but we liked it</div>
+  <div class="outlier-q" id="outlier-q-text"></div>
+  <div class="outlier-note" id="outlier-note-text"></div>
+</div>
+
+<script>
+  let currentState = '';
+  let wasLoading = false;
+
+  // Generate QR code URL for the submit page
+  const submitUrl = window.location.origin + '/submit';
+  document.getElementById('submit-url').textContent = submitUrl;
+  document.getElementById('qr-img').src =
+    `https://api.qrserver.com/v1/create-qr-code/?size=260x260&color=006341&bgcolor=ffffff&data=${encodeURIComponent(submitUrl)}`;
+
+  function showScreen(state) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById('screen-' + state);
+    if (el) el.classList.add('active');
+  }
+
+  async function poll() {
+    try {
+      const r = await fetch('/api/state');
+      const d = await r.json();
+
+      // Show/hide loading overlay
+      const isLoading = d.synthesizing?.act1 || d.synthesizing?.act2;
+      const loadingEl = document.getElementById('loading');
+      if (isLoading) {
+        loadingEl.classList.add('active');
+        const total = d.count.careers + d.count.talents + d.count.questions;
+        document.getElementById('loading-count').textContent = total;
+        wasLoading = true;
+      } else {
+        loadingEl.classList.remove('active');
+      }
+
+      // Update collection screen counter
+      document.getElementById('collection-count').textContent = d.count.questions;
+
+      // Career chart
+      if (d.careerDistribution?.length) {
+        const max = d.careerDistribution[0].count;
+        document.getElementById('career-chart-display').innerHTML =
+          d.careerDistribution.slice(0, 8).map(({ career, count }) => `
+            <div class="chart-row">
+              <div class="chart-label">${esc(career)}</div>
+              <div class="chart-track"><div class="chart-fill" style="width:${Math.round(count/max*100)}%"></div></div>
+              <div class="chart-count">${count}</div>
+            </div>`).join('');
+      }
+
+      // Act 1 result
+      if (d.act1Result) {
+        document.getElementById('act1-career-line').textContent = d.act1Result.career_line;
+        document.getElementById('act1-portrait').textContent = d.act1Result.talent_portrait;
+      }
+
+      // Raw questions
+      if (d.questions) {
+        document.getElementById('raw-q-list').innerHTML =
+          d.questions.map(q => `<div class="q-scroll-item">${esc(q.text)}</div>`).join('');
+      }
+
+      // Act 2 results
+      if (d.act2Result) {
+        const r2 = d.act2Result;
+        document.getElementById('clusters-display').innerHTML =
+          r2.clusters.map(c => `
+            <div class="cluster-card">
+              <div class="cluster-num">${c.count}</div>
+              <div class="cluster-name">${esc(c.label)}</div>
+              <div class="cluster-example">"${esc(c.example_question)}"</div>
+            </div>`).join('');
+        document.getElementById('meta-q-text').textContent = r2.meta_question;
+        document.getElementById('meta-q-rationale').textContent = r2.meta_question_rationale;
+        document.getElementById('outlier-q-text').textContent = r2.outlier_question;
+        document.getElementById('outlier-note-text').textContent = r2.outlier_note;
+      }
+
+      // Switch screen if state changed
+      if (d.displayState !== currentState) {
+        currentState = d.displayState;
+        showScreen(currentState);
+      }
+
+    } catch {}
+  }
+
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  showScreen('collection');
+  poll();
+  setInterval(poll, 2000);
+</script>
+</body>
+</html>
