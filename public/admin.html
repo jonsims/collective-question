@@ -98,6 +98,10 @@
     .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #4CAF7D; display: inline-block; margin-right: 6px; }
     .conn-dot.offline { background: #c0392b; }
 
+    /* Projector preview thumbnail */
+    .preview-container { border: 2px solid #d0e8d8; border-radius: 8px; overflow: hidden; margin-top: 12px; position: relative; width: 100%; padding-top: 56.25%; }
+    .preview-container iframe { position: absolute; top: 0; left: 0; width: 400%; height: 400%; transform: scale(0.25); transform-origin: top left; border: none; pointer-events: none; }
+
     @media (max-width: 700px) { .main { grid-template-columns: 1fr; } .full-col { grid-column: span 1; } }
   </style>
 </head>
@@ -141,6 +145,9 @@
             <button class="display-btn" data-state="outlier" onclick="setDisplay('outlier')">Surprise Q</button>
           </div>
         </div>
+      </div>
+      <div class="preview-container">
+        <iframe src="/display" title="Projector preview"></iframe>
       </div>
     </div>
 
