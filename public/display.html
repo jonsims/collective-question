@@ -62,7 +62,6 @@
     #screen-outlier { background: #1A1A1A; text-align: center; gap: 28px; }
     .outlier-eyebrow { font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.12em; color: #4CAF7D; }
     .outlier-q { font-size: 2.4rem; font-weight: 700; line-height: 1.4; max-width: 860px; color: white; }
-    .outlier-note { font-size: 1.5rem; color: #777; max-width: 660px; line-height: 1.6; font-style: italic; }
 
     /* Loading overlay */
     #loading { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); align-items: center; justify-content: center; flex-direction: column; gap: 20px; z-index: 100; }
@@ -128,7 +127,6 @@
 <div class="screen" id="screen-outlier">
   <div class="outlier-eyebrow">One that didn't fit — but we liked it</div>
   <div class="outlier-q" id="outlier-q-text"></div>
-  <div class="outlier-note" id="outlier-note-text"></div>
 </div>
 
 <script>
@@ -209,7 +207,6 @@
         document.getElementById('meta-q-text').className = 'meta-q';
         document.getElementById('meta-q-rationale').textContent = r2.meta_question_rationale;
         document.getElementById('outlier-q-text').textContent = r2.outlier_question;
-        document.getElementById('outlier-note-text').textContent = r2.outlier_note;
       } else {
         document.getElementById('clusters-display').innerHTML = '<div class="cluster-card"><div class="cluster-name" style="opacity:0.5">Waiting for synthesis...</div></div>';
         document.getElementById('meta-q-text').textContent = 'Waiting for synthesis...';
@@ -217,7 +214,6 @@
         document.getElementById('meta-q-rationale').textContent = '';
         document.getElementById('outlier-q-text').textContent = 'Waiting for synthesis...';
         document.getElementById('outlier-q-text').className = 'outlier-q waiting-text';
-        document.getElementById('outlier-note-text').textContent = '';
       }
 
       // Switch screen
