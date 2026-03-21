@@ -153,24 +153,24 @@
       <div class="talent-list" id="talent-list"></div>
     </div>
 
-    <!-- Act 1 -->
-    <div class="panel">
-      <h2>Act 1 — Fun Reveal</h2>
-      <p class="panel-desc">AI reads all careers and talents, then writes a one-liner about the careers and a short portrait of the room based on talents.</p>
+    <!-- AI Generation -->
+    <div class="panel full-col">
+      <h2>AI Generation</h2>
+      <p class="panel-desc">One click: AI reads all submissions and generates everything — career one-liner, talent portrait, question themes, the meta question, and a surprise question. Takes about 15-20 seconds.</p>
       <div class="readiness" id="act1-readiness"></div>
-      <button class="btn btn-green btn-block" id="act1-btn" onclick="synthesize('act1')">Generate Career Line + Talent Portrait</button>
-      <div class="synth-error" id="act1-error"></div>
-      <div id="act1-result"></div>
-    </div>
-
-    <!-- Act 2 -->
-    <div class="panel">
-      <h2>Act 2 — The Big Question</h2>
-      <p class="panel-desc">AI reads all student questions, groups them into themes, and distills one "meta question" that captures what the room really wants to know.</p>
       <div class="readiness" id="act2-readiness"></div>
-      <button class="btn btn-green btn-block" id="act2-btn" onclick="synthesize('act2')">Generate Clusters + Meta Question</button>
+      <button class="btn btn-green btn-block" id="generate-btn" onclick="generateAll()">Generate All AI Content</button>
+      <div class="synth-error" id="act1-error"></div>
       <div class="synth-error" id="act2-error"></div>
-      <div id="act2-result"></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;">
+        <div>
+          <div id="act1-result"></div>
+        </div>
+        <div>
+          <div id="act2-result"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Display control -->
@@ -325,40 +325,49 @@
         <div>"${esc(r.outlier_question)}"</div></div>`;
     }
 
-    // Button states
-    updateSynthBtn('act1', d.synthesizing?.act1, !!d.act1Result);
-    updateSynthBtn('act2', d.synthesizing?.act2, !!d.act2Result);
-  }
-
-  function updateSynthBtn(act, synthesizing, hasResult) {
-    const btn = document.getElementById(`${act}-btn`);
-    if (synthesizing) {
+    // Generate button state
+    const btn = document.getElementById('generate-btn');
+    const anySynth = d.synthesizing?.act1 || d.synthesizing?.act2;
+    const allDone = d.act1Result && d.act2Result;
+    if (anySynth) {
       btn.disabled = true;
       btn.innerHTML = `<span class="spinning">&#x27F3;</span> AI is reading responses...`;
     } else {
       btn.disabled = false;
-      if (act === 'act1') {
-        btn.textContent = hasResult ? 'Re-generate Career Line + Portrait' : 'Generate Career Line + Talent Portrait';
-      } else {
-        btn.textContent = hasResult ? 'Re-generate Clusters + Meta Question' : 'Generate Clusters + Meta Question';
-      }
+      btn.textContent = allDone ? 'Re-generate All AI Content' : 'Generate All AI Content';
     }
   }
 
-  async function synthesize(act) {
-    const errorEl = document.getElementById(`${act}-error`);
-    errorEl.style.display = 'none';
-    try {
-      const r = await adminFetch(`/api/admin/synthesize/${act}`, { method: 'POST', headers: { 'x-admin-pin': pin } });
-      if (!r.ok) {
-        const e = await r.json().catch(() => ({}));
-        errorEl.textContent = e.error || 'Unknown error';
-        errorEl.style.display = 'block';
-      }
-    } catch (err) {
-      errorEl.textContent = err.name === 'AbortError' ? 'Request timed out — try again' : 'Connection error — try again';
-      errorEl.style.display = 'block';
+  async function generateAll() {
+    const err1 = document.getElementById('act1-error');
+    const err2 = document.getElementById('act2-error');
+    err1.style.display = 'none';
+    err2.style.display = 'none';
+
+    // Run both in parallel
+    const [r1, r2] = await Promise.allSettled([
+      adminFetch('/api/admin/synthesize/act1', { method: 'POST', headers: { 'x-admin-pin': pin } }),
+      adminFetch('/api/admin/synthesize/act2', { method: 'POST', headers: { 'x-admin-pin': pin } }),
+    ]);
+
+    if (r1.status === 'fulfilled' && !r1.value.ok) {
+      const e = await r1.value.json().catch(() => ({}));
+      err1.textContent = 'Act 1: ' + (e.error || 'Unknown error');
+      err1.style.display = 'block';
+    } else if (r1.status === 'rejected') {
+      err1.textContent = 'Act 1: Connection error — try again';
+      err1.style.display = 'block';
     }
+
+    if (r2.status === 'fulfilled' && !r2.value.ok) {
+      const e = await r2.value.json().catch(() => ({}));
+      err2.textContent = 'Act 2: ' + (e.error || 'Unknown error');
+      err2.style.display = 'block';
+    } else if (r2.status === 'rejected') {
+      err2.textContent = 'Act 2: Connection error — try again';
+      err2.style.display = 'block';
+    }
+
     refresh();
   }
 
