@@ -117,40 +117,54 @@
 
   <div class="main">
 
-    <!-- Stats + Next Session -->
+    <!-- Projector Display — TOP, most used during session -->
     <div class="panel full-col">
-      <h2>Live Responses</h2>
-      <p class="panel-desc">Updates automatically as students submit via the QR code.</p>
+      <h2>Projector Display</h2>
+      <p class="panel-desc">Controls what appears on the projector. Click each button in order during the session.</p>
+      <div class="current-state-banner">Now showing: <span id="current-state-label">QR / Collection</span></div>
+
+      <div style="display:flex; gap:24px;">
+        <div style="flex:1;">
+          <div class="section-label">Act 1 — Fun Reveal</div>
+          <div class="display-grid">
+            <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">QR Code</button>
+            <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">Career Chart</button>
+            <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">Portrait</button>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div class="section-label">Act 2 — The Big Question</div>
+          <div class="display-grid">
+            <button class="display-btn" data-state="raw_questions" onclick="setDisplay('raw_questions')">All Questions</button>
+            <button class="display-btn" data-state="clusters" onclick="setDisplay('clusters')">Themes</button>
+            <button class="display-btn" data-state="meta_question" onclick="setDisplay('meta_question')">The Question</button>
+            <button class="display-btn" data-state="outlier" onclick="setDisplay('outlier')">Surprise Q</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Responses + AI Generation -->
+    <div class="panel full-col">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <div>
+          <h2 style="margin-bottom:0">Live Responses</h2>
+          <p class="panel-desc" style="margin-bottom:0">Updates automatically as students submit.</p>
+        </div>
+        <div class="next-session-bar">
+          <button class="btn btn-green" id="next-session-btn" onclick="showNextSessionConfirm()" style="font-size:0.8rem; padding:8px 14px;">Next Session</button>
+        </div>
+      </div>
+      <div class="next-session-confirm" id="next-session-confirm">
+        <p>Clear all submissions, talents, questions, and synthesis results? This cannot be undone.</p>
+        <button class="btn btn-green" onclick="executeNextSession()">Yes, reset for next session</button>
+        <button class="btn btn-gray" onclick="hideNextSessionConfirm()">Cancel</button>
+      </div>
       <div class="stats">
         <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Submissions</div></div>
         <div class="stat"><div class="stat-num" id="stat-talents">0</div><div class="stat-label">Talents</div></div>
         <div class="stat"><div class="stat-num" id="stat-questions">0</div><div class="stat-label">Questions</div></div>
       </div>
-      <div style="margin-top: 12px;">
-        <div class="next-session-bar">
-          <button class="btn btn-green" id="next-session-btn" onclick="showNextSessionConfirm()">Next Session</button>
-          <span style="font-size:0.78rem; color:#888">Clear everything for the next group of students</span>
-        </div>
-        <div class="next-session-confirm" id="next-session-confirm">
-          <p>Clear all submissions, talents, questions, and synthesis results? This cannot be undone.</p>
-          <button class="btn btn-green" onclick="executeNextSession()">Yes, reset for next session</button>
-          <button class="btn btn-gray" onclick="hideNextSessionConfirm()">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Career chart -->
-    <div class="panel">
-      <h2>Career Distribution</h2>
-      <p class="panel-desc">What students wanted to be at age 8. Top 10 shown.</p>
-      <div id="career-chart"></div>
-    </div>
-
-    <!-- Talents -->
-    <div class="panel">
-      <h2>Hidden Talents</h2>
-      <p class="panel-desc">What students said about themselves.</p>
-      <div class="talent-list" id="talent-list"></div>
     </div>
 
     <!-- AI Generation -->
@@ -164,39 +178,26 @@
       <div class="synth-error" id="act2-error"></div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;">
-        <div>
-          <div id="act1-result"></div>
-        </div>
-        <div>
-          <div id="act2-result"></div>
-        </div>
+        <div><div id="act1-result"></div></div>
+        <div><div id="act2-result"></div></div>
       </div>
     </div>
 
-    <!-- Display control -->
+    <!-- Data panels side by side -->
     <div class="panel">
-      <h2>Projector Display</h2>
-      <p class="panel-desc">Controls what appears on the projector. Click each button in order during the session.</p>
-      <div class="current-state-banner">Now showing: <span id="current-state-label">QR / Collection</span></div>
+      <h2>Career Distribution</h2>
+      <p class="panel-desc">What students wanted to be at age 8. Top 10 shown.</p>
+      <div id="career-chart"></div>
+    </div>
 
-      <div class="section-label">Act 1 — Fun Reveal</div>
-      <div class="display-grid">
-        <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">QR Code</button>
-        <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">Career Chart</button>
-        <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">Portrait</button>
-      </div>
-
-      <div class="section-label">Act 2 — The Big Question</div>
-      <div class="display-grid">
-        <button class="display-btn" data-state="raw_questions" onclick="setDisplay('raw_questions')">All Questions</button>
-        <button class="display-btn" data-state="clusters" onclick="setDisplay('clusters')">Themes</button>
-        <button class="display-btn" data-state="meta_question" onclick="setDisplay('meta_question')">The Question</button>
-        <button class="display-btn" data-state="outlier" onclick="setDisplay('outlier')">Surprise Q</button>
-      </div>
+    <div class="panel">
+      <h2>Hidden Talents</h2>
+      <p class="panel-desc">What students said about themselves.</p>
+      <div class="talent-list" id="talent-list"></div>
     </div>
 
     <!-- Questions -->
-    <div class="panel">
+    <div class="panel full-col">
       <h2>Student Questions (<span id="q-count">0</span>)</h2>
       <p class="panel-desc">Everything students asked. Delete any inappropriate ones before generating.</p>
       <div class="q-list" id="q-list"></div>
