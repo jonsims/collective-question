@@ -9,13 +9,61 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const PORT = process.env.PORT || 3000;
 const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
 
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => res.redirect('/submit'));
 app.get('/submit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'submit.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
+
+// ─── Career whitelist ────────────────────────────────────────────────────────
+
+const VALID_CAREERS = new Set([
+  "Astronaut","Veterinarian","Doctor","Lawyer","Teacher","Firefighter","Police Officer",
+  "Chef","Artist","Singer","Dancer","Actor","Athlete (general)","Soccer Player",
+  "Basketball Player","Baseball Player","Gymnast","Swimmer","Marine Biologist","Scientist",
+  "Inventor","Architect","Engineer","Pilot","Princess / Prince","Superhero","Zookeeper",
+  "Paleontologist (dinosaur stuff)","Spy","Race Car Driver","Fashion Designer","Photographer",
+  "Writer","YouTuber / Influencer","Video Game Designer","Animator","Musician","Painter",
+  "Baker / Pastry Chef","President of the United States","Nurse","Therapist","Carpenter",
+  "Marine (military)","Astronomer","Magician","Ballerina","Journalist","Entrepreneur","Other"
+]);
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function parseClaudeJSON(raw) {
+  // Strategy 1: direct parse
+  try { return JSON.parse(raw); } catch {}
+  // Strategy 2: strip code fences
+  try {
+    const stripped = raw.replace(/^```json?\n?/, '').replace(/\n?```$/, '');
+    return JSON.parse(stripped);
+  } catch {}
+  // Strategy 3: extract first {...} block
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch {}
+  }
+  // All strategies failed
+  console.error('[PARSE FAIL] Raw response:', raw);
+  throw new Error('Could not parse Claude response');
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Claude API timeout')), ms)),
+  ]);
+}
+
+function synthesisErrorMessage(err) {
+  const msg = err.message || '';
+  if (msg.includes('timeout')) return 'Claude API timed out — try again in 30s';
+  if (msg.includes('Could not parse')) return 'Response couldn\'t be parsed — retrying usually works';
+  if (err.status) return `Claude API error (${err.status}) — try again in 30s`;
+  return 'Unexpected error — check server logs';
+}
 
 // ─── In-memory session state ────────────────────────────────────────────────
 
@@ -47,7 +95,7 @@ function careerDistribution() {
   const counts = {};
   session.careers.forEach(c => { counts[c] = (counts[c] || 0) + 1; });
   return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .map(([career, count]) => ({ career, count }));
 }
 
@@ -65,7 +113,7 @@ app.get('/api/qr', async (req, res) => {
   }
 });
 
-// Total submission count (careers submitted = one form submitted)
+// Total submission count
 app.get('/api/count', (req, res) => {
   res.json({ total: session.careers.length });
 });
@@ -73,15 +121,27 @@ app.get('/api/count', (req, res) => {
 // Submit form
 app.post('/api/submit', (req, res) => {
   const { career, talent, question } = req.body;
-  if (career) session.careers.push(career);
-  if (talent && talent.trim()) session.talents.push(talent.trim());
-  if (question && question.trim()) {
-    session.questions.push({
-      id: session.nextId++,
-      text: question.trim(),
-      timestamp: Date.now(),
-    });
+
+  // Validate career
+  if (!career || !VALID_CAREERS.has(career)) {
+    return res.status(400).json({ error: 'Invalid career selection' });
   }
+  // Cap total submissions
+  if (session.careers.length >= 500) {
+    return res.status(429).json({ error: 'Submissions are closed' });
+  }
+
+  session.careers.push(career);
+
+  if (talent && typeof talent === 'string') {
+    const t = talent.trim().slice(0, 200);
+    if (t) session.talents.push(t);
+  }
+  if (question && typeof question === 'string') {
+    const q = question.trim().slice(0, 500);
+    if (q) session.questions.push({ id: session.nextId++, text: q, timestamp: Date.now() });
+  }
+
   res.json({ ok: true });
 });
 
@@ -145,11 +205,21 @@ app.delete('/api/admin/question/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-// Reset session
+// Reset session (danger zone)
 app.post('/api/admin/reset', (req, res) => {
   if (!checkPin(req, res)) return;
   resetSession();
   res.json({ ok: true });
+});
+
+// Next session — quick reset between back-to-back sessions
+app.post('/api/admin/next-session', (req, res) => {
+  if (!checkPin(req, res)) return;
+  if (!req.body.confirm) {
+    return res.status(400).json({ error: 'Confirmation required. Send { confirm: true }.' });
+  }
+  resetSession();
+  res.json({ ok: true, message: 'Ready for next session' });
 });
 
 // Load test data
@@ -176,7 +246,8 @@ app.post('/api/admin/load-test-data', (req, res) => {
 
 app.post('/api/admin/synthesize/act1', async (req, res) => {
   if (!checkPin(req, res)) return;
-  if (session.synthesizing.act1) return res.status(409).json({ error: 'Already synthesizing' });
+  if (session.synthesizing.act1) return res.status(409).json({ error: 'Synthesis already in progress' });
+  if (session.careers.length < 5) return res.status(400).json({ error: 'Need at least 5 submissions first' });
 
   session.synthesizing.act1 = true;
   try {
@@ -194,26 +265,24 @@ ${talents}
 
 Write exactly two things:
 
-1. One punchy sentence reacting to the career distribution — something specific and a little funny. Reference actual numbers if interesting.
+1. One punchy sentence (under 25 words) reacting to the career distribution — something specific and a little funny. Reference actual numbers if interesting.
 
-2. One short paragraph (3-4 sentences) that synthesizes the hidden talents into a portrait of who is in this room. Be warm and specific. Find the surprising thing underneath the obvious ones. The last sentence should be the one that makes the room go quiet.
+2. One short paragraph (3-4 sentences, under 80 words) that synthesizes the hidden talents into a portrait of who is in this room. Be warm and specific. Find the surprising thing underneath the obvious ones. The last sentence should be the one that makes the room go quiet.
 
-Return as JSON with no extra text:
+Return ONLY valid JSON with no extra text, no markdown, no code fences:
 {"career_line":"...","talent_portrait":"..."}`;
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 500,
-      messages: [{ role: 'user', content: prompt }],
-    });
+    const message = await withTimeout(
+      anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: prompt }] }),
+      30000
+    );
 
     const raw = message.content[0].text.trim();
-    const json = raw.replace(/^```json?\n?/, '').replace(/\n?```$/, '');
-    session.act1Result = JSON.parse(json);
+    session.act1Result = parseClaudeJSON(raw);
     res.json({ ok: true, result: session.act1Result });
   } catch (err) {
     console.error('Act 1 synthesis error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: synthesisErrorMessage(err) });
   } finally {
     session.synthesizing.act1 = false;
   }
@@ -223,7 +292,8 @@ Return as JSON with no extra text:
 
 app.post('/api/admin/synthesize/act2', async (req, res) => {
   if (!checkPin(req, res)) return;
-  if (session.synthesizing.act2) return res.status(409).json({ error: 'Already synthesizing' });
+  if (session.synthesizing.act2) return res.status(409).json({ error: 'Synthesis already in progress' });
+  if (session.questions.length < 5) return res.status(400).json({ error: 'Need at least 5 questions first' });
 
   session.synthesizing.act2 = true;
   try {
@@ -236,28 +306,28 @@ ${questions}
 
 Please do the following:
 
-1. GROUP the questions into 3-4 thematic clusters. Give each cluster a short label (3-6 words) and a count.
+1. GROUP the questions into 3-4 thematic clusters. Give each cluster a short label (3-5 words) and a count.
 
-2. SYNTHESIZE one "meta question" — the single question that, if answered well, speaks to the most people in the room, including those who didn't know how to phrase what they were feeling. Specific enough to answer in 10 minutes, broad enough to touch multiple themes.
+2. SYNTHESIZE one "meta question" (under 20 words) — the single question that, if answered well, speaks to the most people in the room, including those who didn't know how to phrase what they were feeling.
 
-3. SURFACE one "outlier question" — too specific or too different to fit, but worth noting.
+3. Write a brief rationale (under 30 words) explaining why this question captures the room.
 
-Return ONLY valid JSON with no extra text:
+4. SURFACE one "outlier question" — too specific or too different to fit, but worth noting. Add a brief note (under 20 words) on why it stood out.
+
+Return ONLY valid JSON with no extra text, no markdown, no code fences:
 {"clusters":[{"label":"...","count":N,"example_question":"..."}],"meta_question":"...","meta_question_rationale":"...","outlier_question":"...","outlier_note":"..."}`;
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 800,
-      messages: [{ role: 'user', content: prompt }],
-    });
+    const message = await withTimeout(
+      anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }),
+      30000
+    );
 
     const raw = message.content[0].text.trim();
-    const json = raw.replace(/^```json?\n?/, '').replace(/\n?```$/, '');
-    session.act2Result = JSON.parse(json);
+    session.act2Result = parseClaudeJSON(raw);
     res.json({ ok: true, result: session.act2Result });
   } catch (err) {
     console.error('Act 2 synthesis error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: synthesisErrorMessage(err) });
   } finally {
     session.synthesizing.act2 = false;
   }
