@@ -99,8 +99,11 @@
     .conn-dot.offline { background: #c0392b; }
 
     /* Projector preview thumbnail */
-    .preview-container { border: 2px solid #d0e8d8; border-radius: 8px; overflow: hidden; margin-top: 12px; position: relative; width: 100%; padding-top: 56.25%; }
-    .preview-container iframe { position: absolute; top: 0; left: 0; width: 400%; height: 400%; transform: scale(0.25); transform-origin: top left; border: none; pointer-events: none; }
+    .projector-layout { display: flex; gap: 16px; align-items: flex-start; }
+    .projector-controls { flex: 1; min-width: 0; }
+    .preview-container { flex: 0 0 320px; border: 2px solid #d0e8d8; border-radius: 8px; overflow: hidden; position: relative; height: 180px; }
+    .preview-container iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 720px; transform: scale(0.25); transform-origin: top left; border: none; pointer-events: none; }
+    @media (max-width: 700px) { .projector-layout { flex-direction: column; } .preview-container { flex: none; width: 100%; height: 0; padding-top: 56.25%; } }
 
     @media (max-width: 700px) { .main { grid-template-columns: 1fr; } .full-col { grid-column: span 1; } }
   </style>
@@ -125,18 +128,15 @@
     <div class="panel full-col">
       <h2>Projector Display</h2>
       <p class="panel-desc">Controls what appears on the projector. Click each button in order during the session.</p>
-      <div class="current-state-banner">Now showing: <span id="current-state-label">QR / Collection</span></div>
-
-      <div style="display:flex; gap:24px;">
-        <div style="flex:1;">
+      <div class="projector-layout">
+        <div class="projector-controls">
+          <div class="current-state-banner">Now showing: <span id="current-state-label">QR / Collection</span></div>
           <div class="section-label">Act 1 — Fun Reveal</div>
           <div class="display-grid">
             <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">QR Code</button>
             <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">Career Chart</button>
             <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">Portrait</button>
           </div>
-        </div>
-        <div style="flex:1;">
           <div class="section-label">Act 2 — The Big Question</div>
           <div class="display-grid">
             <button class="display-btn" data-state="raw_questions" onclick="setDisplay('raw_questions')">All Questions</button>
@@ -145,9 +145,9 @@
             <button class="display-btn" data-state="outlier" onclick="setDisplay('outlier')">Surprise Q</button>
           </div>
         </div>
-      </div>
-      <div class="preview-container">
-        <iframe src="/display" title="Projector preview"></iframe>
+        <div class="preview-container">
+          <iframe src="/display" title="Projector preview"></iframe>
+        </div>
       </div>
     </div>
 
