@@ -8,14 +8,17 @@ A live audience participation app for Launch Babson. Students scan a QR code, an
 
 ## The Three Pages
 
-| Page | Public Link | Who Uses It | What It Does |
-|------|------------|------------|--------------|
-| **/submit** | [Submit Form](https://beef-transformation-fragrance-investigated.trycloudflare.com/submit) | Students (on their phones) | 3-question form: age-8 career, hidden talent, question for you |
-| **/admin** | [Admin Panel](https://beef-transformation-fragrance-investigated.trycloudflare.com/admin) | You (on your laptop) | Control panel — trigger synthesis, switch display states |
-| **/display** | [Display / Projector](https://beef-transformation-fragrance-investigated.trycloudflare.com/display) | Projector | Full-screen view that updates based on your admin controls |
+| Page | Who Uses It | What It Does |
+|------|------------|--------------|
+| **/submit** | Students (on their phones) | 3-question form: age-8 career, hidden talent, question for you |
+| **/admin** | You (on your laptop) | Control panel — trigger synthesis, switch display states |
+| **/display** | Projector | Full-screen view that updates based on your admin controls |
 
-> **Current public URL:** `https://beef-transformation-fragrance-investigated.trycloudflare.com`
-> This URL changes each time you restart the tunnel. The QR code on the display page auto-updates to match.
+> **Students never type the URL** — they scan the QR code on the projector, which takes them straight to `/submit`. The URL is also displayed as text below the QR code as a fallback.
+>
+> For your own use, just bookmark the local links:
+> - Admin: [localhost:3000/admin](http://localhost:3000/admin)
+> - Display: [localhost:3000/display](http://localhost:3000/display)
 
 ---
 
@@ -33,15 +36,12 @@ In a second Terminal tab, start a Cloudflare tunnel:
 ```bash
 cloudflared tunnel --url http://localhost:3000 --no-autoupdate
 ```
-Look for the line that says `Your quick Tunnel has been created! Visit it at:` — that's your public URL. It will be something like `https://beef-transformation-fragrance-investigated.trycloudflare.com`. The QR code on the display page automatically uses this URL.
+Look for the line that says `Your quick Tunnel has been created! Visit it at:` — that's the public URL. You don't need to copy it anywhere — the QR code on the display page detects and uses it automatically.
 
 ### 3. Open the admin and display pages
-- **On your laptop:** Open the admin panel — enter PIN `1234`
-  - Public: [https://beef-transformation-fragrance-investigated.trycloudflare.com/admin](https://beef-transformation-fragrance-investigated.trycloudflare.com/admin)
-  - Local: [http://localhost:3000/admin](http://localhost:3000/admin)
-- **On the projector laptop/screen:** Open the display page and full-screen it (F11 or Cmd+Shift+F in Chrome)
-  - Public: [https://beef-transformation-fragrance-investigated.trycloudflare.com/display](https://beef-transformation-fragrance-investigated.trycloudflare.com/display)
-  - Local: [http://localhost:3000/display](http://localhost:3000/display)
+- **On your laptop:** Open [localhost:3000/admin](http://localhost:3000/admin) — enter PIN `1234`
+- **On the projector:** Open [localhost:3000/display](http://localhost:3000/display) — full screen it (Cmd+Shift+F in Chrome)
+  - If the projector is a separate computer, use the public tunnel URL + `/display` instead
 
 ### 4. Test it
 In the admin panel, scroll to the bottom and click **Load Test Data**. Then try:
@@ -105,9 +105,8 @@ Click the green **Next Session** button at the top of the admin panel. It asks "
 ## Key Details
 
 - **Admin PIN:** `1234` (set in `.env` file — change before the event if needed)
-- **Current public URL:** [https://beef-transformation-fragrance-investigated.trycloudflare.com](https://beef-transformation-fragrance-investigated.trycloudflare.com)
 - **Local URL:** [http://localhost:3000](http://localhost:3000)
 - **GitHub repo:** [github.com/jonsims/collective-question](https://github.com/jonsims/collective-question)
 - **API:** Uses Claude (Anthropic) for synthesis. Key is in the `.env` file.
 - **Data:** Everything lives in memory. Restarting the server clears all data.
-- **Important:** The public URL changes every time you restart the tunnel. Always check the terminal output for the new URL.
+- **Public URL:** Generated fresh each time you start the tunnel. Students don't need to know it — they scan the QR code.
