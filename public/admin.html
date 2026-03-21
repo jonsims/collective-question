@@ -6,14 +6,15 @@
   <title>Admin — The Collective Question</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a1a; color: #eee; min-height: 100vh; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F5F5F2; color: #1A1A1A; min-height: 100vh; }
 
     /* PIN gate */
-    #pin-gate { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 16px; }
-    #pin-gate h2 { color: #4CAF7D; font-size: 1.4rem; }
-    #pin-input { padding: 12px 20px; font-size: 1.5rem; text-align: center; border: 2px solid #444; border-radius: 8px; background: #2a2a2a; color: white; width: 160px; letter-spacing: 0.3em; }
+    #pin-gate { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 16px; background: #F5F5F2; }
+    #pin-gate h2 { color: #006341; font-size: 1.4rem; }
+    #pin-input { padding: 12px 20px; font-size: 1.5rem; text-align: center; border: 2px solid #ccc; border-radius: 8px; background: white; color: #1A1A1A; width: 160px; letter-spacing: 0.3em; }
+    #pin-input:focus { border-color: #006341; outline: none; }
     #pin-btn { padding: 12px 32px; background: #006341; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
-    #pin-error { color: #f88; font-size: 0.9rem; }
+    #pin-error { color: #c0392b; font-size: 0.9rem; }
 
     /* Layout */
     #app { display: none; }
@@ -21,73 +22,74 @@
     header h1 { font-size: 1rem; font-weight: 700; color: white; }
 
     .main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; max-width: 1200px; margin: 0 auto; }
-    .panel { background: #2a2a2a; border-radius: 10px; padding: 16px; }
-    .panel h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: #4CAF7D; margin-bottom: 12px; }
+    .panel { background: white; border-radius: 10px; padding: 16px; border: 1px solid #e0e0e0; }
+    .panel h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: #006341; margin-bottom: 4px; }
+    .panel-desc { font-size: 0.78rem; color: #888; margin-bottom: 12px; line-height: 1.4; }
     .full-col { grid-column: span 2; }
 
     /* Stats */
     .stats { display: flex; gap: 12px; }
-    .stat { background: #333; border-radius: 8px; padding: 12px 16px; flex: 1; text-align: center; }
-    .stat-num { font-size: 2.2rem; font-weight: 700; color: #4CAF7D; }
+    .stat { background: #f0f9f4; border: 1px solid #d0e8d8; border-radius: 8px; padding: 12px 16px; flex: 1; text-align: center; }
+    .stat-num { font-size: 2.2rem; font-weight: 700; color: #006341; }
     .stat-label { font-size: 0.7rem; color: #888; text-transform: uppercase; }
 
     /* Buttons */
     .btn { padding: 10px 18px; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: 600; transition: opacity 0.15s; }
     .btn:hover { opacity: 0.85; }
     .btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .btn-green { background: #4CAF7D; color: #1a1a1a; }
-    .btn-gray { background: #444; color: #eee; }
+    .btn-green { background: #006341; color: white; }
+    .btn-gray { background: #e0e0e0; color: #555; }
     .btn-block { width: 100%; margin-bottom: 8px; padding: 14px; font-size: 0.95rem; }
 
     /* Next session */
     .next-session-bar { display: flex; align-items: center; gap: 12px; }
     .next-session-bar .btn { flex-shrink: 0; }
-    .next-session-confirm { display: none; background: #1a3a2a; border: 1px solid #4CAF7D; border-radius: 8px; padding: 12px 16px; margin-top: 8px; }
-    .next-session-confirm p { font-size: 0.85rem; color: #ccc; margin-bottom: 10px; }
+    .next-session-confirm { display: none; background: #f0f9f4; border: 1px solid #006341; border-radius: 8px; padding: 12px 16px; margin-top: 8px; }
+    .next-session-confirm p { font-size: 0.85rem; color: #555; margin-bottom: 10px; }
     .next-session-confirm .btn { margin-right: 8px; }
 
     /* Synthesis readiness + errors */
     .readiness { font-size: 0.82rem; color: #888; margin-bottom: 8px; min-height: 1.2em; }
-    .readiness.ready { color: #4CAF7D; }
-    .synth-error { color: #f88; font-size: 0.82rem; margin-top: 8px; display: none; }
+    .readiness.ready { color: #006341; }
+    .synth-error { color: #c0392b; font-size: 0.82rem; margin-top: 8px; display: none; }
 
     /* Bar chart */
     .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 0.82rem; }
-    .bar-label { width: 150px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
-    .bar-track { flex: 1; background: #3a3a3a; border-radius: 3px; height: 12px; }
+    .bar-label { width: 150px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+    .bar-track { flex: 1; background: #e8e8e4; border-radius: 3px; height: 12px; }
     .bar-fill { background: #006341; height: 12px; border-radius: 3px; transition: width 0.5s; min-width: 2px; }
-    .bar-count { width: 22px; text-align: right; color: #666; font-size: 0.78rem; }
+    .bar-count { width: 22px; text-align: right; color: #888; font-size: 0.78rem; }
 
     /* Talent list */
     .talent-list { max-height: 150px; overflow-y: auto; }
-    .talent-item { font-size: 0.8rem; color: #aaa; padding: 4px 0; border-bottom: 1px solid #333; line-height: 1.4; }
+    .talent-item { font-size: 0.8rem; color: #555; padding: 4px 0; border-bottom: 1px solid #eee; line-height: 1.4; }
 
     /* Display controls */
-    .current-state-banner { background: #1a3a2a; border: 1px solid #2a5a3a; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.85rem; }
-    .current-state-banner span { color: #4CAF7D; font-weight: 700; }
+    .current-state-banner { background: #f0f9f4; border: 1px solid #d0e8d8; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.85rem; color: #555; }
+    .current-state-banner span { color: #006341; font-weight: 700; }
     .section-label { font-size: 0.7rem; text-transform: uppercase; color: #888; letter-spacing: 0.06em; margin-bottom: 6px; margin-top: 4px; }
     .display-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px; }
-    .display-btn { padding: 9px 8px; background: #333; border: 2px solid transparent; border-radius: 7px; color: #ccc; font-size: 0.78rem; cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.3; }
-    .display-btn:hover { border-color: #4CAF7D; color: white; }
-    .display-btn.active { border-color: #4CAF7D; background: #1a3a2a; color: #4CAF7D; font-weight: 700; }
+    .display-btn { padding: 9px 8px; background: #f0f0ec; border: 2px solid transparent; border-radius: 7px; color: #555; font-size: 0.78rem; cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.3; }
+    .display-btn:hover { border-color: #006341; color: #1A1A1A; }
+    .display-btn.active { border-color: #006341; background: #f0f9f4; color: #006341; font-weight: 700; }
 
     /* Result box */
-    .result-box { background: #1a2a1a; border: 1px solid #2a4a2a; border-radius: 8px; padding: 12px; margin-top: 8px; font-size: 0.82rem; line-height: 1.6; color: #ccc; }
-    .result-label { font-size: 0.68rem; text-transform: uppercase; color: #4CAF7D; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .result-box { background: #f0f9f4; border: 1px solid #d0e8d8; border-radius: 8px; padding: 12px; margin-top: 8px; font-size: 0.82rem; line-height: 1.6; color: #333; }
+    .result-label { font-size: 0.68rem; text-transform: uppercase; color: #006341; letter-spacing: 0.08em; margin-bottom: 4px; }
 
     /* Questions */
     .q-list { max-height: 260px; overflow-y: auto; }
-    .q-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid #2a2a2a; font-size: 0.82rem; color: #ccc; }
-    .q-num { color: #555; flex-shrink: 0; width: 20px; }
+    .q-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 0.82rem; color: #333; }
+    .q-num { color: #aaa; flex-shrink: 0; width: 20px; }
     .q-text { flex: 1; line-height: 1.4; }
-    .q-del { background: #3a2a2a; border: none; border-radius: 4px; color: #888; cursor: pointer; font-size: 0.85rem; padding: 4px 10px; flex-shrink: 0; transition: all 0.15s; }
-    .q-del:hover { background: #c0392b; color: white; }
+    .q-del { background: #fee; border: 1px solid #ecc; border-radius: 4px; color: #c0392b; cursor: pointer; font-size: 0.85rem; padding: 4px 10px; flex-shrink: 0; transition: all 0.15s; }
+    .q-del:hover { background: #c0392b; color: white; border-color: #c0392b; }
 
     /* Danger zone */
-    .danger-zone { border: 1px solid #4a2a2a; border-radius: 8px; padding: 14px; margin-top: 16px; }
+    .danger-zone { border: 1px solid #ecc; border-radius: 8px; padding: 14px; margin-top: 16px; }
     .danger-zone h3 { font-size: 0.75rem; text-transform: uppercase; color: #c0392b; letter-spacing: 0.08em; margin-bottom: 10px; }
     .danger-btns { display: flex; gap: 8px; }
-    .btn-red { background: #2a1a1a; border: 1px solid #c0392b; color: #c0392b; }
+    .btn-red { background: white; border: 1px solid #c0392b; color: #c0392b; }
     .btn-red:hover { background: #c0392b; color: white; }
 
     .spinning { display: inline-block; animation: spin 1s linear infinite; }
@@ -104,7 +106,7 @@
 <div id="pin-gate">
   <h2>Admin Access</h2>
   <input type="password" id="pin-input" placeholder="PIN" maxlength="4" inputmode="numeric" onkeydown="if(event.key==='Enter') checkPin()">
-  <button class="btn btn-green" onclick="checkPin()">Enter</button>
+  <button class="btn btn-green" id="pin-btn" onclick="checkPin()">Enter</button>
   <div id="pin-error"></div>
 </div>
 
@@ -117,6 +119,8 @@
 
     <!-- Stats + Next Session -->
     <div class="panel full-col">
+      <h2>Live Responses</h2>
+      <p class="panel-desc">Updates automatically as students submit via the QR code.</p>
       <div class="stats">
         <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Submissions</div></div>
         <div class="stat"><div class="stat-num" id="stat-talents">0</div><div class="stat-label">Talents</div></div>
@@ -138,57 +142,63 @@
     <!-- Career chart -->
     <div class="panel">
       <h2>Career Distribution</h2>
+      <p class="panel-desc">What students wanted to be at age 8. Top 10 shown.</p>
       <div id="career-chart"></div>
     </div>
 
     <!-- Talents -->
     <div class="panel">
       <h2>Hidden Talents</h2>
+      <p class="panel-desc">What students said about themselves.</p>
       <div class="talent-list" id="talent-list"></div>
     </div>
 
     <!-- Act 1 -->
     <div class="panel">
       <h2>Act 1 — Fun Reveal</h2>
+      <p class="panel-desc">AI reads all careers and talents, then writes a one-liner about the careers and a short portrait of the room based on talents.</p>
       <div class="readiness" id="act1-readiness"></div>
-      <button class="btn btn-green btn-block" id="act1-btn" onclick="synthesize('act1')">Synthesize Act 1</button>
+      <button class="btn btn-green btn-block" id="act1-btn" onclick="synthesize('act1')">Generate Career Line + Talent Portrait</button>
       <div class="synth-error" id="act1-error"></div>
       <div id="act1-result"></div>
     </div>
 
     <!-- Act 2 -->
     <div class="panel">
-      <h2>Act 2 — Meta Question</h2>
+      <h2>Act 2 — The Big Question</h2>
+      <p class="panel-desc">AI reads all student questions, groups them into themes, and distills one "meta question" that captures what the room really wants to know.</p>
       <div class="readiness" id="act2-readiness"></div>
-      <button class="btn btn-green btn-block" id="act2-btn" onclick="synthesize('act2')">Synthesize Act 2</button>
+      <button class="btn btn-green btn-block" id="act2-btn" onclick="synthesize('act2')">Generate Clusters + Meta Question</button>
       <div class="synth-error" id="act2-error"></div>
       <div id="act2-result"></div>
     </div>
 
     <!-- Display control -->
     <div class="panel">
-      <h2>Display Control</h2>
+      <h2>Projector Display</h2>
+      <p class="panel-desc">Controls what appears on the projector. Click each button in order during the session.</p>
       <div class="current-state-banner">Now showing: <span id="current-state-label">QR / Collection</span></div>
 
       <div class="section-label">Act 1 — Fun Reveal</div>
       <div class="display-grid">
-        <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">QR / Collection</button>
+        <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">QR Code</button>
         <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">Career Chart</button>
-        <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">Act 1 Synthesis</button>
+        <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">Portrait</button>
       </div>
 
-      <div class="section-label">Act 2 — The Question</div>
+      <div class="section-label">Act 2 — The Big Question</div>
       <div class="display-grid">
-        <button class="display-btn" data-state="raw_questions" onclick="setDisplay('raw_questions')">Raw Questions</button>
-        <button class="display-btn" data-state="clusters" onclick="setDisplay('clusters')">Clusters</button>
-        <button class="display-btn" data-state="meta_question" onclick="setDisplay('meta_question')">Meta Question</button>
-        <button class="display-btn" data-state="outlier" onclick="setDisplay('outlier')">Outlier</button>
+        <button class="display-btn" data-state="raw_questions" onclick="setDisplay('raw_questions')">All Questions</button>
+        <button class="display-btn" data-state="clusters" onclick="setDisplay('clusters')">Themes</button>
+        <button class="display-btn" data-state="meta_question" onclick="setDisplay('meta_question')">The Question</button>
+        <button class="display-btn" data-state="outlier" onclick="setDisplay('outlier')">Surprise Q</button>
       </div>
     </div>
 
     <!-- Questions -->
     <div class="panel">
-      <h2>Questions (<span id="q-count">0</span>)</h2>
+      <h2>Student Questions (<span id="q-count">0</span>)</h2>
+      <p class="panel-desc">Everything students asked. Delete any inappropriate ones before generating.</p>
       <div class="q-list" id="q-list"></div>
     </div>
 
@@ -211,9 +221,9 @@
   let pollInterval;
 
   const STATE_LABELS = {
-    collection: 'QR / Collection', career_chart: 'Career Chart',
-    act1_synthesis: 'Act 1 Synthesis', raw_questions: 'Raw Questions',
-    clusters: 'Clusters', meta_question: 'Meta Question', outlier: 'Outlier'
+    collection: 'QR Code', career_chart: 'Career Chart',
+    act1_synthesis: 'Portrait', raw_questions: 'All Questions',
+    clusters: 'Themes', meta_question: 'The Question', outlier: 'Surprise Q'
   };
 
   // Shared fetch with timeout
@@ -307,15 +317,15 @@
     if (d.act2Result) {
       const r = d.act2Result;
       document.getElementById('act2-result').innerHTML = `<div class="result-box">
-        <div class="result-label">Clusters</div>
-        ${r.clusters.map(c => `<div style="margin-bottom:4px"><span style="color:#4CAF7D;font-weight:600">${esc(c.label)}</span> — ${c.count} questions</div>`).join('')}
-        <div class="result-label" style="margin-top:10px">Meta question</div>
+        <div class="result-label">Themes</div>
+        ${r.clusters.map(c => `<div style="margin-bottom:4px"><span style="color:#006341;font-weight:600">${esc(c.label)}</span> — ${c.count} questions</div>`).join('')}
+        <div class="result-label" style="margin-top:10px">The question</div>
         <div style="font-style:italic;margin-bottom:8px">"${esc(r.meta_question)}"</div>
-        <div class="result-label">Outlier</div>
+        <div class="result-label">Surprise question</div>
         <div>"${esc(r.outlier_question)}"</div></div>`;
     }
 
-    // Synthesis button states
+    // Button states
     updateSynthBtn('act1', d.synthesizing?.act1, !!d.act1Result);
     updateSynthBtn('act2', d.synthesizing?.act2, !!d.act2Result);
   }
@@ -324,10 +334,14 @@
     const btn = document.getElementById(`${act}-btn`);
     if (synthesizing) {
       btn.disabled = true;
-      btn.innerHTML = `<span class="spinning">&#x27F3;</span> Synthesizing...`;
+      btn.innerHTML = `<span class="spinning">&#x27F3;</span> AI is reading responses...`;
     } else {
       btn.disabled = false;
-      btn.textContent = hasResult ? `Re-synthesize ${act === 'act1' ? 'Act 1' : 'Act 2'}` : `Synthesize ${act === 'act1' ? 'Act 1' : 'Act 2'}`;
+      if (act === 'act1') {
+        btn.textContent = hasResult ? 'Re-generate Career Line + Portrait' : 'Generate Career Line + Talent Portrait';
+      } else {
+        btn.textContent = hasResult ? 'Re-generate Clusters + Meta Question' : 'Generate Clusters + Meta Question';
+      }
     }
   }
 
