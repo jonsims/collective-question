@@ -45,8 +45,7 @@ Look for the line that says `Your quick Tunnel has been created! Visit it at:` �
 
 ### 4. Test it
 In the admin panel, scroll to the bottom and click **Load Test Data**. Then try:
-- Click **Synthesize Act 1** — wait ~10 seconds — you should see a career one-liner and talent portrait
-- Click **Synthesize Act 2** — wait ~15 seconds — you should see clusters and a meta question
+- Click **Generate All AI Content** — wait ~15-20 seconds — you should see career one-liner, talent portrait, clusters, and a meta question
 - Step through the display states using the buttons — watch the projector page change
 
 When done testing, click **Next Session** → **Yes, reset for next session** to clear test data.
