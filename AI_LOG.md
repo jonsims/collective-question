@@ -37,3 +37,51 @@
 3. Test full flow on Render with real API key
 4. Do a dry run on the actual projector in Winn Auditorium to check font sizes
 5. Rotate the Anthropic API key
+
+---
+
+## 2026-04-08 — Major feature additions for Friday's event
+
+**Files reviewed:** server.js, all 3 HTML pages, package.json, .env
+
+**Work completed this session:**
+- Added 2 new questions to submit form: "Where are you from?" (US state or country) and "Favorite food?"
+- Created `locations.js` with 165 US states + countries (with lat/lng centroids for map plotting)
+- Added `/api/locations` endpoint serving the location whitelist for the form datalist
+- Server now validates locations against the whitelist (same pattern as careers)
+- Added `world_map` display state with 3D interactive globe (globe.gl) + SVG world map fallback
+- Vendored globe.gl (1.7MB) + earth-night.jpg (698KB) into `public/lib/` — no CDN dependencies
+- Globe shows points sized/elevated by location count, auto-rotates, atmosphere glow
+- Added `recipe` display state — full-page parchment-styled recipe card
+- Added Recipe synthesis endpoint: Claude generates an absurd, ambitious recipe using students' favorite foods. Returns name, tagline, ingredients, steps, tasting note, foods_used count.
+- Updated admin panel: new stats (locations, foods), location chart, foods list, AI Recipe panel with separate Generate button, new display buttons for World Map and Recipe
+- Updated test data with 118 locations (Massachusetts-heavy, with international representation) and 91 foods
+- Created `render.yaml` blueprint for one-click Render deployment
+
+**Reliability work:**
+- Load-tested 150 concurrent submissions: 100% success, 31ms total, 16ms avg latency, max 24ms
+- Server confirmed to handle 100+ concurrent users with no issues
+- All synthesis features tested end-to-end with real Claude API: Act 1 (~8s), Act 2 (~8s parallel), Recipe (~14s)
+
+**Files updated:**
+- server.js — locations, foods, recipe synthesis, updated test data
+- public/submit.html — 5 questions, location datalist loaded from API
+- public/display.html — world_map and recipe screens, globe.gl integration
+- public/admin.html — new stats, charts, recipe panel, world_map button
+- locations.js — created, 165 entries
+- public/lib/globe.gl.min.js + earth-night.jpg — vendored
+- render.yaml — created for Render deployment
+- CLAUDE.md — updated to reflect 5-question form, new display states, vendored libs
+
+**Known issues / not yet done:**
+- The Render service may not actually exist yet (collective-question.onrender.com returns 404). Jonathan needs to verify in dashboard.render.com and either create the service or share the actual URL.
+- The Cloudflare tunnel was running on a previous local server but isn't currently active.
+- No live verification on Render yet — only verified locally.
+- The .env file has been edited (likely to add the rotated API key, per the previous session's recommendation).
+
+**Recommended next actions for next session:**
+1. Verify Render deployment URL — create the service if needed (use render.yaml blueprint)
+2. Test the live deployment URL to make sure all routes work
+3. Wake the Render dyno ~5 min before the actual event Friday
+4. Do a dry run on the projector in Winn Auditorium — verify globe renders, fonts are readable
+5. Update Quick Start Guide and testing guide to reflect the 5-question form and new world_map/recipe states

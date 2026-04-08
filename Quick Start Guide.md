@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A live audience participation app for Launch Babson. Students scan a QR code, answer 3 quick questions, and AI synthesizes their responses in real time on the projector. You control everything from an admin panel on your laptop.
+A live audience participation app for Launch Babson. Students scan a QR code, answer 5 quick questions, and AI synthesizes their responses in real time on the projector. You control everything from an admin panel on your laptop.
 
 ---
 
@@ -10,7 +10,7 @@ A live audience participation app for Launch Babson. Students scan a QR code, an
 
 | Page | Who Uses It | What It Does |
 |------|------------|--------------|
-| **/submit** | Students (on their phones) | 3-question form: age-8 career, hidden talent, question for you |
+| **/submit** | Students (on their phones) | 5-question form: age-8 career, location, talent, favorite food, question |
 | **/admin** | You (on your laptop) | Control panel — trigger synthesis, switch display states |
 | **/display** | Projector | Full-screen view that updates based on your admin controls |
 
@@ -46,7 +46,9 @@ Look for the line that says `Your quick Tunnel has been created! Visit it at:` �
 ### 4. Test it
 In the admin panel, scroll to the bottom and click **Load Test Data**. Then try:
 - Click **Generate All AI Content** — wait ~15-20 seconds — you should see career one-liner, talent portrait, clusters, and a meta question
+- Click **Generate Recipe** — wait ~15 seconds — you'll get an absurd AI-invented recipe from the foods
 - Step through the display states using the buttons — watch the projector page change
+- Try the **World Map** button — you should see a 3D globe with green dots where students are from
 
 When done testing, click **Next Session** → **Yes, reset for next session** to clear test data.
 
@@ -58,18 +60,19 @@ When done testing, click **Next Session** → **Yes, reset for next session** to
 
 | Step | What You Do | What Students See |
 |------|------------|-------------------|
-| **1. Collection** | Display starts on QR screen automatically | Students scan QR code, fill out 3 questions (~30 sec) |
+| **1. Collection** | Display starts on QR screen automatically | Students scan QR code, fill out 5 questions (~45 sec) |
 | **2. Kristi's exercise** | Watch the submission counter climb | They're submitting while Kristi runs her prediction exercise |
-| **3. Career Chart** | Click **Career Chart** in admin | Bar chart of what everyone wanted to be at age 8 |
-| **4. Synthesize Act 1** | Click **Synthesize Act 1**, wait for result | Nothing yet (they watch you) |
-| **5. Act 1 Reveal** | Click **Act 1 Synthesis** | Career one-liner + talent portrait appear on screen |
-| **6. React together** | You and Kristi discuss the portrait | — |
-| **7. Raw Questions** | Click **Raw Questions** | Their questions scroll on screen |
-| **8. Synthesize Act 2** | Click **Synthesize Act 2**, wait for result | Nothing yet |
-| **9. Clusters** | Click **Clusters** | Themed groups with counts |
-| **10. Meta Question** | Click **Meta Question** | The one synthesized question appears |
+| **3. World Map** | Click **World Map** | 3D globe lights up with where everyone is from |
+| **4. Career Chart** | Click **Career Chart** | Bar chart of what everyone wanted to be at age 8 |
+| **5. Generate AI** | Click **Generate All AI Content**, wait ~15s | Nothing yet (they watch you) |
+| **6. Portrait** | Click **Portrait** | Career one-liner + talent portrait appear |
+| **7. React together** | You and Kristi discuss the portrait | — |
+| **8. All Questions** | Click **All Questions** | Their questions scroll on screen |
+| **9. Themes** | Click **Themes** | Question groups with counts |
+| **10. The Question** | Click **The Question** | The one synthesized meta question appears |
 | **11. Answer it** | You and Kristi answer, unrehearsed | — |
-| **12. Outlier** | Click **Outlier** | One question that didn't fit but was interesting |
+| **12. Surprise Q** | Click **Surprise Q** | One question that didn't fit but was interesting |
+| **13. Bonus: Recipe** | (Optional) Click **Generate Recipe**, then **AI Recipe** | The AI's absurd recipe from their favorite foods |
 
 ### Between Sessions
 
@@ -80,11 +83,12 @@ Click the green **Next Session** button at the top of the admin panel. It asks "
 ## Admin Panel At a Glance
 
 - **Green dot** (top left) = connected to server. Red = connection lost.
-- **Stats row** = live count of submissions, talents, questions.
-- **Readiness text** below each Synthesize button tells you if you have enough data (need at least 5).
-- **Display buttons** are grouped into Act 1 and Act 2 so you know the sequence.
+- **Stats row** = live count of submissions, locations, talents, foods, questions.
+- **Readiness text** below each generate button tells you if you have enough data (need at least 5).
+- **Display buttons** are grouped into Act 1, Act 2, and Bonus.
 - **"Now showing"** banner tells you what the projector is currently displaying.
-- **Red errors** below synthesis buttons = something went wrong. Usually just click again.
+- **Live preview** thumbnail on the right shows exactly what's on the projector.
+- **Red errors** below generate buttons = something went wrong. Usually just click again.
 
 ---
 
