@@ -135,6 +135,7 @@
           <div class="display-grid">
             <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">QR Code</button>
             <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">Career Chart</button>
+            <button class="display-btn" data-state="world_map" onclick="setDisplay('world_map')">World Map</button>
             <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">Portrait</button>
           </div>
           <div class="section-label">Act 2 — The Big Question</div>
@@ -143,6 +144,10 @@
             <button class="display-btn" data-state="clusters" onclick="setDisplay('clusters')">Themes</button>
             <button class="display-btn" data-state="meta_question" onclick="setDisplay('meta_question')">The Question</button>
             <button class="display-btn" data-state="outlier" onclick="setDisplay('outlier')">Surprise Q</button>
+          </div>
+          <div class="section-label">Bonus — On Demand</div>
+          <div class="display-grid">
+            <button class="display-btn" data-state="recipe" onclick="setDisplay('recipe')">AI Recipe</button>
           </div>
         </div>
         <div class="preview-container">
@@ -169,7 +174,9 @@
       </div>
       <div class="stats">
         <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Submissions</div></div>
+        <div class="stat"><div class="stat-num" id="stat-locations">0</div><div class="stat-label">Locations</div></div>
         <div class="stat"><div class="stat-num" id="stat-talents">0</div><div class="stat-label">Talents</div></div>
+        <div class="stat"><div class="stat-num" id="stat-foods">0</div><div class="stat-label">Foods</div></div>
         <div class="stat"><div class="stat-num" id="stat-questions">0</div><div class="stat-label">Questions</div></div>
       </div>
     </div>
@@ -177,7 +184,7 @@
     <!-- AI Generation -->
     <div class="panel full-col">
       <h2>AI Generation</h2>
-      <p class="panel-desc">One click: AI reads all submissions and generates everything — career one-liner, talent portrait, question themes, the meta question, and a surprise question. Takes about 15-20 seconds.</p>
+      <p class="panel-desc">One click: AI reads all submissions and generates the career one-liner, talent portrait, question themes, the meta question, and a surprise question. Takes about 15-20 seconds.</p>
       <div class="readiness" id="act1-readiness"></div>
       <div class="readiness" id="act2-readiness"></div>
       <button class="btn btn-green btn-block" id="generate-btn" onclick="generateAll()">Generate All AI Content</button>
@@ -190,6 +197,16 @@
       </div>
     </div>
 
+    <!-- Bonus: Recipe -->
+    <div class="panel full-col">
+      <h2>Bonus: AI Recipe From Favorite Foods</h2>
+      <p class="panel-desc">Optional fun finale: AI invents an absurd recipe using as many of the students' favorite foods as possible. Takes ~15 seconds.</p>
+      <div class="readiness" id="recipe-readiness"></div>
+      <button class="btn btn-green btn-block" id="recipe-btn" onclick="generateRecipe()">Generate Recipe</button>
+      <div class="synth-error" id="recipe-error"></div>
+      <div id="recipe-result"></div>
+    </div>
+
     <!-- Data panels side by side -->
     <div class="panel">
       <h2>Career Distribution</h2>
@@ -198,9 +215,21 @@
     </div>
 
     <div class="panel">
+      <h2>Locations</h2>
+      <p class="panel-desc">Where students are from. Top 10 shown.</p>
+      <div id="location-chart"></div>
+    </div>
+
+    <div class="panel">
       <h2>Hidden Talents</h2>
       <p class="panel-desc">What students said about themselves.</p>
       <div class="talent-list" id="talent-list"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Favorite Foods</h2>
+      <p class="panel-desc">Used by the AI Recipe generator.</p>
+      <div class="talent-list" id="food-list"></div>
     </div>
 
     <!-- Questions -->
@@ -229,9 +258,10 @@
   let pollInterval;
 
   const STATE_LABELS = {
-    collection: 'QR Code', career_chart: 'Career Chart',
+    collection: 'QR Code', career_chart: 'Career Chart', world_map: 'World Map',
     act1_synthesis: 'Portrait', raw_questions: 'All Questions',
-    clusters: 'Themes', meta_question: 'The Question', outlier: 'Surprise Q'
+    clusters: 'Themes', meta_question: 'The Question', outlier: 'Surprise Q',
+    recipe: 'AI Recipe'
   };
 
   // Shared fetch with timeout
@@ -282,19 +312,25 @@
   function updateUI(d) {
     // Stats
     document.getElementById('stat-total').textContent = d.careers.length;
+    document.getElementById('stat-locations').textContent = (d.locations || []).length;
     document.getElementById('stat-talents').textContent = d.talents.length;
+    document.getElementById('stat-foods').textContent = (d.foods || []).length;
     document.getElementById('stat-questions').textContent = d.questions.length;
     document.getElementById('q-count').textContent = d.questions.length;
 
     // Readiness signals
     const a1ready = d.careers.length >= 5;
     const a2ready = d.questions.length >= 5;
+    const recipeReady = (d.foods || []).length >= 5;
     const a1r = document.getElementById('act1-readiness');
     const a2r = document.getElementById('act2-readiness');
+    const rr = document.getElementById('recipe-readiness');
     a1r.textContent = a1ready ? `Ready — ${d.careers.length} submissions` : `Need at least 5 submissions (have ${d.careers.length})`;
     a1r.className = 'readiness' + (a1ready ? ' ready' : '');
     a2r.textContent = a2ready ? `Ready — ${d.questions.length} questions` : `Need at least 5 questions (have ${d.questions.length})`;
     a2r.className = 'readiness' + (a2ready ? ' ready' : '');
+    rr.textContent = recipeReady ? `Ready — ${(d.foods || []).length} foods` : `Need at least 5 food submissions (have ${(d.foods || []).length})`;
+    rr.className = 'readiness' + (recipeReady ? ' ready' : '');
 
     // Career chart
     const maxC = d.careerDistribution[0]?.count || 1;
@@ -302,8 +338,18 @@
       `<div class="bar-row"><div class="bar-label" title="${esc(career)}">${esc(career)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(count/maxC*100)}%"></div></div><div class="bar-count">${count}</div></div>`
     ).join('');
 
+    // Location chart
+    const locPoints = d.locationPoints || [];
+    const maxL = locPoints[0]?.count || 1;
+    document.getElementById('location-chart').innerHTML = locPoints.slice(0, 10).map(p =>
+      `<div class="bar-row"><div class="bar-label" title="${esc(p.name)}">${esc(p.name)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(p.count/maxL*100)}%"></div></div><div class="bar-count">${p.count}</div></div>`
+    ).join('');
+
     // Talents
     document.getElementById('talent-list').innerHTML = d.talents.map(t => `<div class="talent-item">${esc(t)}</div>`).join('');
+
+    // Foods
+    document.getElementById('food-list').innerHTML = (d.foods || []).map(f => `<div class="talent-item">${esc(f)}</div>`).join('');
 
     // Questions
     document.getElementById('q-list').innerHTML = d.questions.map((q, i) =>
@@ -344,6 +390,26 @@
       btn.disabled = false;
       btn.textContent = allDone ? 'Re-generate All AI Content' : 'Generate All AI Content';
     }
+
+    // Recipe button + result
+    const recipeBtn = document.getElementById('recipe-btn');
+    if (d.synthesizing?.recipe) {
+      recipeBtn.disabled = true;
+      recipeBtn.innerHTML = `<span class="spinning">&#x27F3;</span> Cooking up a recipe...`;
+    } else {
+      recipeBtn.disabled = false;
+      recipeBtn.textContent = d.recipeResult ? 'Re-generate Recipe' : 'Generate Recipe';
+    }
+    if (d.recipeResult) {
+      const r = d.recipeResult;
+      document.getElementById('recipe-result').innerHTML = `<div class="result-box">
+        <div class="result-label">Recipe name</div>
+        <div style="font-weight:700; margin-bottom:8px">${esc(r.name)}</div>
+        <div style="font-style:italic; color:#888; margin-bottom:8px">${esc(r.tagline || '')}</div>
+        <div class="result-label">Foods used</div>
+        <div>${r.foods_used || (r.ingredients || []).length} of the room's favorites</div>
+      </div>`;
+    }
   }
 
   async function generateAll() {
@@ -376,6 +442,26 @@
       err2.style.display = 'block';
     }
 
+    refresh();
+  }
+
+  async function generateRecipe() {
+    const errEl = document.getElementById('recipe-error');
+    errEl.style.display = 'none';
+    try {
+      const r = await adminFetch('/api/admin/synthesize/recipe', {
+        method: 'POST',
+        headers: { 'x-admin-pin': pin }
+      });
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        errEl.textContent = e.error || 'Unknown error';
+        errEl.style.display = 'block';
+      }
+    } catch (err) {
+      errEl.textContent = err.name === 'AbortError' ? 'Request timed out — try again' : 'Connection error — try again';
+      errEl.style.display = 'block';
+    }
     refresh();
   }
 

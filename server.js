@@ -3,6 +3,7 @@ const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const path = require('path');
 const QRCode = require('qrcode');
+const { LOCATIONS, LOCATION_BY_NAME } = require('./locations');
 
 const app = express();
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -69,25 +70,31 @@ function synthesisErrorMessage(err) {
 
 let session = {
   careers: [],
+  locations: [],   // array of location names (validated against LOCATIONS)
   talents: [],
+  foods: [],       // array of favorite food strings
   questions: [],
   nextId: 1,
   displayState: 'collection',
   act1Result: null,
   act2Result: null,
-  synthesizing: { act1: false, act2: false },
+  recipeResult: null,
+  synthesizing: { act1: false, act2: false, recipe: false },
 };
 
 function resetSession() {
   session = {
     careers: [],
+    locations: [],
     talents: [],
+    foods: [],
     questions: [],
     nextId: 1,
     displayState: 'collection',
     act1Result: null,
     act2Result: null,
-    synthesizing: { act1: false, act2: false },
+    recipeResult: null,
+    synthesizing: { act1: false, act2: false, recipe: false },
   };
 }
 
@@ -97,6 +104,20 @@ function careerDistribution() {
   return Object.entries(counts)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .map(([career, count]) => ({ career, count }));
+}
+
+function locationPoints() {
+  // Group submissions by location, return [{name, lat, lng, type, count}]
+  const counts = {};
+  session.locations.forEach(name => { counts[name] = (counts[name] || 0) + 1; });
+  return Object.entries(counts)
+    .map(([name, count]) => {
+      const loc = LOCATION_BY_NAME.get(name);
+      if (!loc) return null;
+      return { name, lat: loc.lat, lng: loc.lng, type: loc.type, iso: loc.iso, count };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.count - a.count);
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
@@ -118,13 +139,22 @@ app.get('/api/count', (req, res) => {
   res.json({ total: session.careers.length });
 });
 
+// Locations list (for submit form datalist)
+app.get('/api/locations', (req, res) => {
+  res.json(LOCATIONS.map(l => l.name));
+});
+
 // Submit form
 app.post('/api/submit', (req, res) => {
-  const { career, talent, question } = req.body;
+  const { career, location, talent, food, question } = req.body;
 
   // Validate career
   if (!career || !VALID_CAREERS.has(career)) {
     return res.status(400).json({ error: 'Invalid career selection' });
+  }
+  // Validate location (now required)
+  if (!location || !LOCATION_BY_NAME.has(location)) {
+    return res.status(400).json({ error: 'Invalid location' });
   }
   // Cap total submissions
   if (session.careers.length >= 500) {
@@ -132,10 +162,15 @@ app.post('/api/submit', (req, res) => {
   }
 
   session.careers.push(career);
+  session.locations.push(location);
 
   if (talent && typeof talent === 'string') {
     const t = talent.trim().slice(0, 200);
     if (t) session.talents.push(t);
+  }
+  if (food && typeof food === 'string') {
+    const f = food.trim().slice(0, 100);
+    if (f) session.foods.push(f);
   }
   if (question && typeof question === 'string') {
     const q = question.trim().slice(0, 500);
@@ -151,13 +186,17 @@ app.get('/api/state', (req, res) => {
     displayState: session.displayState,
     count: {
       careers: session.careers.length,
+      locations: session.locations.length,
       talents: session.talents.length,
+      foods: session.foods.length,
       questions: session.questions.length,
     },
     careerDistribution: careerDistribution().slice(0, 12),
+    locationPoints: locationPoints(),
     questions: session.questions,
     act1Result: session.act1Result,
     act2Result: session.act2Result,
+    recipeResult: session.recipeResult,
     synthesizing: session.synthesizing,
   });
 });
@@ -178,11 +217,15 @@ app.get('/api/admin/data', (req, res) => {
   res.json({
     careers: session.careers,
     careerDistribution: careerDistribution(),
+    locations: session.locations,
+    locationPoints: locationPoints(),
     talents: session.talents,
+    foods: session.foods,
     questions: session.questions,
     displayState: session.displayState,
     act1Result: session.act1Result,
     act2Result: session.act2Result,
+    recipeResult: session.recipeResult,
     synthesizing: session.synthesizing,
   });
 });
@@ -191,7 +234,7 @@ app.get('/api/admin/data', (req, res) => {
 app.post('/api/admin/display', (req, res) => {
   if (!checkPin(req, res)) return;
   const { state } = req.body;
-  const valid = ['collection', 'career_chart', 'act1_synthesis', 'raw_questions', 'clusters', 'meta_question', 'outlier'];
+  const valid = ['collection', 'career_chart', 'world_map', 'act1_synthesis', 'raw_questions', 'clusters', 'meta_question', 'outlier', 'recipe'];
   if (!valid.includes(state)) return res.status(400).json({ error: 'Invalid state' });
   session.displayState = state;
   res.json({ ok: true, displayState: state });
@@ -233,13 +276,71 @@ app.post('/api/admin/load-test-data', (req, res) => {
 
   const questionList = ["Will AI make my degree worthless before I even graduate?","How do you use AI in your own classes?","Should I be scared of AI or excited about it?","Is it cheating to use ChatGPT on assignments?","How is Babson different from other business schools when it comes to AI?","What's The Generator and how do I get involved?","Do professors actually use AI themselves or just tell us not to?","What's the most useful thing AI can do for a college student?","Will AI replace strategy consultants?","How do you know when AI is wrong?","What majors are most protected from AI disruption?","Can AI help me write better or does it just write for me?","Do you think AI will change what it means to get a business degree?","What tools do you actually recommend students use?","Is there an AI policy at Babson?","How do I use AI without losing my own voice as a writer?","Will companies even care if I know how to use AI?","What's the difference between using AI as a tool vs. depending on it?","What's one thing AI cannot do that humans can?","How has AI changed the way you teach?","Do you think AI is overhyped?","What should I learn in college that AI can't learn for me?","Will AI get better at predicting the future than humans?","How do I become someone who uses AI well instead of badly?","Is AI going to change what business strategy means?","Can AI help with starting a business in FME?","What's the most important skill to develop alongside AI?","Do you think AI is good for creativity or bad for it?","How do you use AI for research without plagiarizing?","What's an example of a time AI surprised you?","Should I learn to code even if I'm a business major?","What do employers think about students who use AI?","Will AI make it easier or harder to start a business?","How do you teach critical thinking when AI can answer everything?","What's the best way to learn prompt engineering?","Can AI help me figure out what career I want?","How do I know if AI output is actually good quality?","What's your biggest worry about students using AI?","Is AI going to make internships more competitive?","How has AI changed how you grade?","Can AI help with group projects?","What's the most common mistake students make with AI?","Is there a version of AI use that's always okay vs. never okay?","Do you think AI will change what entrepreneurship looks like?","How do you stay current on AI when it changes so fast?","What should I know about AI before I start college?","Will AI be able to teach college courses?","How do you feel about students using AI on exams?","What's the most interesting AI tool you've used recently?","Can AI help with networking and career stuff?","Do you think future leaders need to understand AI?","How do you use AI in your writing process?","What's the difference between AI making you smarter vs. making you lazy?","Is AI going to make it harder or easier to get a job after graduation?","What do you wish you knew about AI 5 years ago?","How do I avoid becoming dependent on AI?","What's the best AI tool for business students right now?","Can AI help me understand financial statements?","How should I think about AI as a first-gen college student?","Do you think AI will change the Babson curriculum?","How do I use AI to practice for interviews?","Will AI change what it means to be a good writer?","Can AI help me choose my concentration?","How do you use AI to prepare for class?","What's one AI tool every college student should know?","Do you think AI is more useful for creative work or analytical work?","How do you make sure students are still learning when AI can do the work?","Can AI help with studying for exams?","How do I know when to trust AI and when to verify it?","What's the relationship between AI and entrepreneurship at Babson?","Do you worry that AI will make students less curious?","How do you use AI to give feedback on student writing?","What's the most common misconception about AI you hear from students?","Is AI better at strategy than humans yet?","How do I develop my own judgment when AI is always available?","What does it mean to be AI literate?","Can AI help with public speaking?","Do you think AI makes business more ethical or less ethical?","How is AI changing the finance industry?","What's the hardest part of using AI responsibly?","Can AI help me with the FME course?","How do you balance using AI with developing your own skills?","What's one thing AI is genuinely terrible at?","Can I use AI to help me write my college papers?","How do you think about AI and originality?","Will AI change how companies are organized?","Do you use AI for your own research?","How do I get good at AI without a technical background?","What's the most exciting thing happening in AI right now?","Do you think students should take AI ethics courses?","Can AI help with marketing for a small business?","How do you handle it when a student submits AI-written work?","How do I use AI to accelerate my learning without replacing it?","What questions should I be asking about AI that I'm not asking?","Is there a community at Babson for students who are really into AI?","How do you teach strategy differently because of AI?","What's the most surprising thing AI has taught you about your own field?","What's the right mindset for a student entering college right now?","Is coding still worth learning for business students?","Do you think AI will make human creativity more or less valuable?","What's one way AI has made your job harder?","How do you think about AI and academic integrity?","Do you think the hype around AI is justified?","What do I need to know about AI to be competitive when I graduate?","Do you think AI will change what leadership means?","Can AI help me write a business plan?","What's the most interesting AI use case you've seen from students?","How do you stay skeptical about AI without falling behind?","What's one thing about AI that you think is genuinely scary?","How do I know if I'm using AI as a crutch?","What's the most important question about AI that nobody is asking?","Do you think AI will change what it means to be educated?","How do you teach writing in an age when AI can write?","Can AI help me figure out whether my business idea is good?","Do you think AI makes students more or less confident?","How has AI changed what employers want from Babson graduates?","What's the best way to practice using AI so I get good at it?","Can AI help with time management?","What's one thing you'd tell an incoming student about AI that nobody else will tell them?","What's the most underrated AI tool for college students?","How do you use AI to develop better questions, not just answers?","Do you think AI will change the startup ecosystem?","How do I use AI to learn something I'm struggling with?","What's the most human thing about the way you teach?","What's the best way to stay current on AI as a non-technical person?","Do you think students who are good at using AI have an unfair advantage?","What's your favorite example of AI being used in a creative way?","How does AI fit into the Babson entrepreneurial mindset?","What's the most important thing to understand about how AI actually works?","What's one AI skill that will still matter in 20 years?","Do you think AI will change what kinds of people succeed in business?","How do you use AI to help you make better decisions?","What's the weirdest way you've used AI?","Do you think AI is going to be net positive or net negative for society?","What's the most misunderstood thing about AI?","How do you keep students from just copying AI output?","Can AI help me figure out what I want to do with my life?","How do you use AI to save time without cutting corners?","What's something AI can do that still amazes you?","Can AI help me write better emails and professional communications?","What's the difference between AI and automation?","How has AI changed what it means to do good research?","What's one thing you'd tell us to stop worrying about when it comes to AI?","How do you use AI to get unstuck when you're working on something hard?","How do you think about AI and privacy?","What's one thing about AI that gives you genuine hope?","How do you teach students to be critical of AI output?","What's the most important question to ask before using AI for any task?","What's the relationship between AI and the kind of thinking Babson tries to develop?","Do you think AI will make college more or less important?","What's something you've changed your mind about regarding AI?","How do you use AI as a sparring partner for your own ideas?","What's the single most useful thing I could do with AI in my first semester?","How do you think about AI and the things that make us human?","Is there anything about how Babson handles AI that you're especially proud of?","Will AI change what it means to be an entrepreneur?","What advice would you give a student who is afraid of being left behind on AI?","How do you make sure your own thinking doesn't get replaced by AI?","What's one thing AI does poorly that I might not expect?","What's the most important habit to develop around AI use?","What's the biggest gap between how AI is portrayed in the media and what it actually is?","Do you think students who grow up with AI will think differently than those who didn't?","How do you think about the relationship between AI and human judgment?","Do you think AI will change what makes a great college experience?","What's the first thing I should do with AI when I get to Babson?"];
 
+  // Locations — biased toward US east coast (Babson is in MA) but with diverse international representation
+  const locationList = [
+    "Massachusetts","Massachusetts","Massachusetts","Massachusetts","Massachusetts","Massachusetts","Massachusetts","Massachusetts",
+    "New York","New York","New York","New York","New York","New York","New York",
+    "Connecticut","Connecticut","Connecticut","Connecticut","Connecticut",
+    "New Jersey","New Jersey","New Jersey","New Jersey",
+    "California","California","California","California","California",
+    "Florida","Florida","Florida","Florida",
+    "Texas","Texas","Texas",
+    "Pennsylvania","Pennsylvania","Pennsylvania",
+    "Illinois","Illinois",
+    "Maryland","Maryland",
+    "Virginia","Virginia",
+    "Washington","Georgia","North Carolina","Ohio","Michigan",
+    "Colorado","Arizona","Minnesota","Wisconsin",
+    "Rhode Island","New Hampshire","Maine","Vermont",
+    // International — strong Asia, some Europe, some LATAM, some Africa
+    "China","China","China","China","China","China",
+    "India","India","India","India","India",
+    "South Korea","South Korea","South Korea",
+    "Vietnam","Vietnam",
+    "Japan","Japan",
+    "Hong Kong","Taiwan",
+    "Singapore","Thailand","Indonesia","Philippines","Malaysia",
+    "Pakistan","Bangladesh","Sri Lanka","Nepal",
+    "United Kingdom","United Kingdom","France","Germany","Italy","Spain",
+    "Netherlands","Switzerland","Sweden","Ireland",
+    "Brazil","Mexico","Mexico","Colombia","Argentina","Chile","Peru",
+    "Canada","Canada","Canada",
+    "United Arab Emirates","Saudi Arabia","Israel","Turkey","Egypt",
+    "Nigeria","Kenya","Ghana","South Africa",
+    "Australia","New Zealand"
+  ];
+
+  const foodList = [
+    "Pizza","Sushi","Tacos","Pasta","Ramen","Burgers","Fried chicken","Mac and cheese",
+    "Pho","Pad Thai","Biryani","Butter chicken","Tikka masala","Dumplings","Bao buns","Korean BBQ",
+    "Bibimbap","Tonkatsu","Tempura","Curry","Chicken tikka","Shawarma","Falafel","Hummus",
+    "Pizza","Sushi","Tacos","Mom's lasagna","Grandma's biryani","Bagels","Bacon","Steak",
+    "Eggs benedict","Pancakes","Waffles","Avocado toast","Acai bowls","Smoothies","Smoothie bowls",
+    "Mango sticky rice","Boba tea","Bubble tea","Matcha lattes","Iced coffee","Croissants",
+    "Brownies","Chocolate chip cookies","Ice cream","Cheesecake","Tiramisu","Crème brûlée","Mochi",
+    "Birthday cake","Donuts","Cinnamon rolls","Apple pie","Banana bread",
+    "Chick-fil-A","In-N-Out","Chipotle","Five Guys","Shake Shack","Halal cart chicken and rice",
+    "Dim sum","Hot pot","Korean fried chicken","Empanadas","Arepas","Ceviche","Tamales","Pupusas",
+    "Jollof rice","Injera with stews","Tagine","Couscous","Pierogi","Borscht","Goulash",
+    "Caesar salad","Pesto pasta","Carbonara","Lobster roll","Clam chowder","Fish and chips",
+    "Buffalo wings","Nachos","Quesadillas","Burritos","Crepes","Paella","Risotto"
+  ];
+
   session.careers = careerPicks;
+  session.locations = locationList;
   session.talents = talentList;
+  session.foods = foodList;
   questionList.forEach(text => {
     session.questions.push({ id: session.nextId++, text, timestamp: Date.now() });
   });
 
-  res.json({ ok: true, loaded: { careers: session.careers.length, talents: session.talents.length, questions: session.questions.length } });
+  res.json({ ok: true, loaded: {
+    careers: session.careers.length,
+    locations: session.locations.length,
+    talents: session.talents.length,
+    foods: session.foods.length,
+    questions: session.questions.length
+  } });
 });
 
 // ─── Synthesis: Act 1 ────────────────────────────────────────────────────────
@@ -330,6 +431,50 @@ Return ONLY valid JSON with no extra text, no markdown, no code fences:
     res.status(500).json({ error: synthesisErrorMessage(err) });
   } finally {
     session.synthesizing.act2 = false;
+  }
+});
+
+// ─── Synthesis: Recipe ───────────────────────────────────────────────────────
+
+app.post('/api/admin/synthesize/recipe', async (req, res) => {
+  if (!checkPin(req, res)) return;
+  if (session.synthesizing.recipe) return res.status(409).json({ error: 'Synthesis already in progress' });
+  if (session.foods.length < 5) return res.status(400).json({ error: 'Need at least 5 food submissions first' });
+
+  session.synthesizing.recipe = true;
+  try {
+    const foods = session.foods.join(', ');
+
+    const prompt = `You are a wildly creative chef helping two college professors at an admitted student day. The room of incoming college students just submitted their favorite foods. Your job is to invent an absurd, ambitious recipe that uses as many of these ingredients/dishes as possible — even if it shouldn't work.
+
+Favorite foods from the room (${session.foods.length} students):
+${foods}
+
+Create a recipe that:
+- Has a memorable, slightly silly name
+- References AT LEAST 8 of the actual submitted foods (use them as inspiration even if the original is a dish, e.g. "pizza" → use "pizza dough")
+- Lists 8-12 ingredients with playful quantities
+- Has 5-7 brief, confident steps (under 25 words each)
+- Ends with a single funny tasting note
+
+This is meant to be entertaining, not realistic. Lean into the chaos. Be bold. Be specific. Reference the actual foods students mentioned.
+
+Return ONLY valid JSON with no extra text, no markdown, no code fences:
+{"name":"...","tagline":"...","ingredients":["...","..."],"steps":["...","..."],"tasting_note":"...","foods_used":N}`;
+
+    const message = await withTimeout(
+      anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
+      30000
+    );
+
+    const raw = message.content[0].text.trim();
+    session.recipeResult = parseClaudeJSON(raw);
+    res.json({ ok: true, result: session.recipeResult });
+  } catch (err) {
+    console.error('Recipe synthesis error:', err);
+    res.status(500).json({ error: synthesisErrorMessage(err) });
+  } finally {
+    session.synthesizing.recipe = false;
   }
 });
 
