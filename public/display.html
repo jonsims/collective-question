@@ -63,18 +63,24 @@
     .outlier-eyebrow { font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.12em; color: #4CAF7D; }
     .outlier-q { font-size: 2.4rem; font-weight: 700; line-height: 1.4; max-width: 860px; color: white; }
 
-    /* ── World Map ── */
-    #screen-world_map { background: #0a1929; padding: 0; align-items: stretch; justify-content: stretch; }
+    /* ── World Map (3D globe) ── */
+    #screen-world_map { background: #ffffff; padding: 0; align-items: stretch; justify-content: stretch; }
     .map-header { position: absolute; top: 32px; left: 0; right: 0; text-align: center; z-index: 10; pointer-events: none; }
-    .map-header h2 { font-size: 2.2rem; font-weight: 800; color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
-    .map-header p { font-size: 1.3rem; color: #88c5a8; opacity: 0.9; margin-top: 6px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+    .map-header h2 { font-size: 2.4rem; font-weight: 800; color: #006341; }
+    .map-header p { font-size: 1.4rem; color: #555; margin-top: 6px; }
     #globe-container { width: 100%; height: 100vh; position: relative; }
-    #svg-fallback { width: 100%; height: 100vh; display: none; }
-    #svg-fallback.active { display: block; }
     .map-stats { position: absolute; bottom: 32px; left: 0; right: 0; text-align: center; z-index: 10; pointer-events: none; }
-    .map-stats .top-locations { display: inline-flex; gap: 24px; flex-wrap: wrap; justify-content: center; max-width: 90%; }
-    .map-stats .top-loc-item { color: white; font-size: 1.4rem; background: rgba(0, 99, 65, 0.85); padding: 8px 16px; border-radius: 20px; backdrop-filter: blur(4px); }
-    .map-stats .top-loc-item .count { font-weight: 800; }
+    .map-stats .top-locations { display: inline-flex; gap: 16px; flex-wrap: wrap; justify-content: center; max-width: 90%; }
+    .map-stats .top-loc-item { color: white; font-size: 1.4rem; background: #006341; padding: 10px 18px; border-radius: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .map-stats .top-loc-item .count { font-weight: 800; margin-right: 6px; }
+
+    /* ── World Map (flat SVG) ── */
+    #screen-world_map_svg { background: #ffffff; padding: 0; align-items: stretch; justify-content: stretch; position: relative; }
+    .flat-map-wrapper { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; padding: 100px 32px 120px; }
+    .flat-map-wrapper svg { width: 100%; height: 100%; max-width: 1600px; }
+    .flat-map-img { width: 100%; height: 100%; object-fit: contain; }
+    .flat-dot { fill: #c0392b; stroke: white; stroke-width: 2; }
+    .flat-dot-glow { fill: #c0392b; opacity: 0.25; }
 
     /* ── Recipe ── */
     #screen-recipe { background: #f4e4c1; color: #2a1810; align-items: center; justify-content: flex-start; padding: 48px 64px; overflow-y: auto; }
@@ -161,29 +167,32 @@
   <div class="outlier-q" id="outlier-q-text"></div>
 </div>
 
-<!-- World Map -->
+<!-- World Map (3D Globe) -->
 <div class="screen" id="screen-world_map">
   <div class="map-header">
     <h2>Where you're from</h2>
     <p id="map-subtitle">0 students, 0 places</p>
   </div>
   <div id="globe-container"></div>
-  <svg id="svg-fallback" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
-    <!-- Simple Equirectangular world outline + dots overlay -->
-    <rect width="1000" height="500" fill="#0a1929"/>
-    <g id="svg-continents" fill="#1e3a52" stroke="#2a4d6a" stroke-width="0.5">
-      <!-- Approximate continent shapes (simplified blocks for fallback only) -->
-      <path d="M120,140 L350,140 L380,200 L370,260 L320,300 L240,320 L160,280 L100,200 Z"/>
-      <path d="M420,160 L520,140 L590,170 L600,260 L560,340 L490,360 L440,320 L410,250 Z"/>
-      <path d="M460,360 L550,360 L580,440 L520,470 L470,450 Z"/>
-      <path d="M620,140 L820,130 L890,200 L870,280 L780,330 L680,290 L630,210 Z"/>
-      <path d="M280,360 L350,360 L370,440 L310,470 L260,440 Z"/>
-      <path d="M820,360 L900,360 L920,420 L860,440 L820,420 Z"/>
-    </g>
-    <g id="svg-dots"></g>
-  </svg>
   <div class="map-stats">
     <div class="top-locations" id="top-locations"></div>
+  </div>
+</div>
+
+<!-- World Map (Flat SVG, always available as alternative) -->
+<div class="screen" id="screen-world_map_svg">
+  <div class="map-header">
+    <h2>Where you're from</h2>
+    <p id="map-subtitle-svg">0 students, 0 places</p>
+  </div>
+  <div class="flat-map-wrapper">
+    <svg id="flat-map-svg" viewBox="0 0 2000 1000" preserveAspectRatio="xMidYMid meet">
+      <image href="/lib/earth-day.jpg" x="0" y="0" width="2000" height="1000" preserveAspectRatio="none"/>
+      <g id="flat-dots"></g>
+    </svg>
+  </div>
+  <div class="map-stats">
+    <div class="top-locations" id="top-locations-svg"></div>
   </div>
 </div>
 
@@ -217,25 +226,25 @@
   let connOk = true;
   let globeInstance = null;
   let globeReady = false;
-  let useSvgFallback = false;
   let lastLocationKey = '';
 
-  // Try to initialize globe.gl. If it fails, fall back to SVG.
+  // Initialize globe.gl. If it fails, the world_map screen will be empty
+  // but the world_map_svg screen will still work as an alternative.
   function initGlobe() {
     try {
       if (typeof Globe !== 'function') throw new Error('Globe.gl not loaded');
       const container = document.getElementById('globe-container');
       globeInstance = Globe()(container)
-        .globeImageUrl('/lib/earth-night.jpg')
-        .backgroundColor('#0a1929')
+        .globeImageUrl('/lib/earth-day.jpg')
+        .backgroundColor('#ffffff')
         .pointAltitude(d => 0.01 + Math.min(d.count, 20) * 0.012)
         .pointRadius(d => 0.4 + Math.min(d.count, 10) * 0.15)
-        .pointColor(() => '#4CAF7D')
+        .pointColor(() => '#c0392b')
         .pointResolution(8)
         .pointsMerge(false)
-        .atmosphereColor('#88c5a8')
+        .atmosphereColor('#006341')
         .atmosphereAltitude(0.18)
-        .showGraticules(true);
+        .showGraticules(false);
       // Auto-rotate
       globeInstance.controls().autoRotate = true;
       globeInstance.controls().autoRotateSpeed = 0.4;
@@ -250,23 +259,23 @@
       resize();
       window.addEventListener('resize', resize);
     } catch (err) {
-      console.warn('Globe failed, using SVG fallback:', err);
-      useSvgFallback = true;
-      document.getElementById('globe-container').style.display = 'none';
-      document.getElementById('svg-fallback').classList.add('active');
+      console.warn('Globe failed to initialize:', err);
+      // The flat SVG map (world_map_svg state) is always available as an alternative
+      const c = document.getElementById('globe-container');
+      if (c) c.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:1.4rem">3D globe failed to load. Use the Flat Map instead.</div>';
     }
   }
 
-  // Update SVG dots from location points (lat/lng → equirectangular x/y)
-  function updateSvgDots(points) {
-    const max = points.length ? points[0].count : 1;
+  // Update flat SVG map dots — equirectangular projection for the 2000x1000 viewbox
+  function updateFlatMapDots(points) {
     const html = points.map(p => {
-      const x = (p.lng + 180) * (1000 / 360);
-      const y = (90 - p.lat) * (500 / 180);
-      const r = 4 + Math.min(p.count, 15) * 1.5;
-      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="#4CAF7D" fill-opacity="0.8" stroke="#88c5a8" stroke-width="1"/>`;
+      const x = (p.lng + 180) * (2000 / 360);
+      const y = (90 - p.lat) * (1000 / 180);
+      const r = 6 + Math.min(p.count, 15) * 2;
+      return `<circle class="flat-dot-glow" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r * 2}"/>` +
+             `<circle class="flat-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}"/>`;
     }).join('');
-    document.getElementById('svg-dots').innerHTML = html;
+    document.getElementById('flat-dots').innerHTML = html;
   }
 
   // QR code + fallback URL — all local, no external dependency
@@ -297,26 +306,27 @@
         document.getElementById('loading-count').textContent = d.count.careers + d.count.questions;
       }
 
-      // World map — update points whenever locations change
+      // World map — update both 3D globe + flat SVG when locations change
       if (d.locationPoints) {
         const key = JSON.stringify(d.locationPoints.map(p => [p.name, p.count]));
         if (key !== lastLocationKey) {
           lastLocationKey = key;
-          if (globeReady && !useSvgFallback) {
+          if (globeReady) {
             globeInstance.pointsData(d.locationPoints);
           }
-          if (useSvgFallback) {
-            updateSvgDots(d.locationPoints);
-          }
-          // Subtitle + top locations
+          updateFlatMapDots(d.locationPoints);
+
+          // Subtitle + top locations (shared by both screens)
           const totalStudents = d.count.locations || 0;
           const uniquePlaces = d.locationPoints.length;
-          document.getElementById('map-subtitle').textContent =
-            `${totalStudents} students from ${uniquePlaces} places`;
+          const subtitleText = `${totalStudents} students from ${uniquePlaces} places`;
+          document.getElementById('map-subtitle').textContent = subtitleText;
+          document.getElementById('map-subtitle-svg').textContent = subtitleText;
           const top = d.locationPoints.slice(0, 6).map(p =>
-            `<div class="top-loc-item"><span class="count">${p.count}</span> ${esc(p.name)}</div>`
+            `<div class="top-loc-item"><span class="count">${p.count}</span>${esc(p.name)}</div>`
           ).join('');
           document.getElementById('top-locations').innerHTML = top;
+          document.getElementById('top-locations-svg').innerHTML = top;
         }
       }
 

@@ -135,7 +135,8 @@
           <div class="display-grid">
             <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">QR Code</button>
             <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">Career Chart</button>
-            <button class="display-btn" data-state="world_map" onclick="setDisplay('world_map')">World Map</button>
+            <button class="display-btn" data-state="world_map" onclick="setDisplay('world_map')">3D Globe</button>
+            <button class="display-btn" data-state="world_map_svg" onclick="setDisplay('world_map_svg')">Flat Map</button>
             <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">Portrait</button>
           </div>
           <div class="section-label">Act 2 — The Big Question</div>
@@ -258,7 +259,8 @@
   let pollInterval;
 
   const STATE_LABELS = {
-    collection: 'QR Code', career_chart: 'Career Chart', world_map: 'World Map',
+    collection: 'QR Code', career_chart: 'Career Chart',
+    world_map: '3D Globe', world_map_svg: 'Flat Map',
     act1_synthesis: 'Portrait', raw_questions: 'All Questions',
     clusters: 'Themes', meta_question: 'The Question', outlier: 'Surprise Q',
     recipe: 'AI Recipe'

@@ -234,7 +234,7 @@ app.get('/api/admin/data', (req, res) => {
 app.post('/api/admin/display', (req, res) => {
   if (!checkPin(req, res)) return;
   const { state } = req.body;
-  const valid = ['collection', 'career_chart', 'world_map', 'act1_synthesis', 'raw_questions', 'clusters', 'meta_question', 'outlier', 'recipe'];
+  const valid = ['collection', 'career_chart', 'world_map', 'world_map_svg', 'act1_synthesis', 'raw_questions', 'clusters', 'meta_question', 'outlier', 'recipe'];
   if (!valid.includes(state)) return res.status(400).json({ error: 'Invalid state' });
   session.displayState = state;
   res.json({ ok: true, displayState: state });
