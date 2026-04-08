@@ -74,13 +74,29 @@
     .map-stats .top-loc-item { color: white; font-size: 1.4rem; background: #006341; padding: 10px 18px; border-radius: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
     .map-stats .top-loc-item .count { font-weight: 800; margin-right: 6px; }
 
-    /* ── World Map (flat SVG) ── */
-    #screen-world_map_svg { background: #ffffff; padding: 0; align-items: stretch; justify-content: stretch; position: relative; }
-    .flat-map-wrapper { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; padding: 100px 32px 120px; }
-    .flat-map-wrapper svg { width: 100%; height: 100%; max-width: 1600px; }
-    .flat-map-img { width: 100%; height: 100%; object-fit: contain; }
+    /* ── World Map (flat) ── */
+    #screen-world_map_svg { background: #ffffff !important; padding: 0 !important; position: relative; }
+    .flat-map-container {
+      position: absolute;
+      top: 130px;
+      left: 0;
+      right: 0;
+      bottom: 130px;
+      background-image: url('/lib/earth-day.jpg');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
+    }
+    .flat-map-container svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
     .flat-dot { fill: #c0392b; stroke: white; stroke-width: 2; }
-    .flat-dot-glow { fill: #c0392b; opacity: 0.25; }
+    .flat-dot-glow { fill: #c0392b; opacity: 0.3; }
 
     /* ── Recipe ── */
     #screen-recipe { background: #f4e4c1; color: #2a1810; align-items: center; justify-content: flex-start; padding: 48px 64px; overflow-y: auto; }
@@ -179,15 +195,14 @@
   </div>
 </div>
 
-<!-- World Map (Flat SVG, always available as alternative) -->
+<!-- World Map (Flat, always available as alternative) -->
 <div class="screen" id="screen-world_map_svg">
   <div class="map-header">
     <h2>Where you're from</h2>
     <p id="map-subtitle-svg">0 students, 0 places</p>
   </div>
-  <div class="flat-map-wrapper">
-    <svg id="flat-map-svg" viewBox="0 0 2000 1000" preserveAspectRatio="xMidYMid meet">
-      <image href="/lib/earth-day.jpg" x="0" y="0" width="2000" height="1000" preserveAspectRatio="none"/>
+  <div class="flat-map-container">
+    <svg viewBox="0 0 2000 1000" preserveAspectRatio="xMidYMid meet">
       <g id="flat-dots"></g>
     </svg>
   </div>
