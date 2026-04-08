@@ -227,6 +227,8 @@
   let globeInstance = null;
   let globeReady = false;
   let lastLocationKey = '';
+  let lastLocationPoints = [];
+  let globeHasPoints = false;
 
   // Initialize globe.gl. If it fails, the world_map screen will be empty
   // but the world_map_svg screen will still work as an alternative.
@@ -258,6 +260,11 @@
       };
       resize();
       window.addEventListener('resize', resize);
+      // If we already have location data from earlier polls, push it now
+      if (lastLocationPoints.length > 0) {
+        globeInstance.pointsData(lastLocationPoints);
+        globeHasPoints = true;
+      }
     } catch (err) {
       console.warn('Globe failed to initialize:', err);
       // The flat SVG map (world_map_svg state) is always available as an alternative
@@ -306,17 +313,23 @@
         document.getElementById('loading-count').textContent = d.count.careers + d.count.questions;
       }
 
-      // World map — update both 3D globe + flat SVG when locations change
+      // World map — keep both 3D globe + flat SVG in sync with location data
       if (d.locationPoints) {
+        // Always cache the latest points so initGlobe can use them if it's still loading
+        lastLocationPoints = d.locationPoints;
+
+        // Always push to the globe if it's ready (cheap; ensures sync after init)
+        if (globeReady) {
+          globeInstance.pointsData(d.locationPoints);
+          globeHasPoints = d.locationPoints.length > 0;
+        }
+
+        // Only update DOM/SVG when the data actually changes (saves work)
         const key = JSON.stringify(d.locationPoints.map(p => [p.name, p.count]));
         if (key !== lastLocationKey) {
           lastLocationKey = key;
-          if (globeReady) {
-            globeInstance.pointsData(d.locationPoints);
-          }
           updateFlatMapDots(d.locationPoints);
 
-          // Subtitle + top locations (shared by both screens)
           const totalStudents = d.count.locations || 0;
           const uniquePlaces = d.locationPoints.length;
           const subtitleText = `${totalStudents} students from ${uniquePlaces} places`;
@@ -435,8 +448,14 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
 
   showScreen('collection');
-  // Initialize globe after a brief delay so the container has dimensions
-  setTimeout(initGlobe, 100);
+  // Initialize globe after the page settles. We wait for the load event so the
+  // container has dimensions, then call initGlobe. lastLocationPoints will be
+  // applied automatically if poll() ran first.
+  if (document.readyState === 'complete') {
+    setTimeout(initGlobe, 300);
+  } else {
+    window.addEventListener('load', () => setTimeout(initGlobe, 300));
+  }
   poll();
   setInterval(poll, 2000);
 </script>
