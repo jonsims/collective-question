@@ -131,7 +131,7 @@
 <body>
 
 <div id="loading">
-  <div class="loading-text">Reading <span id="loading-count">0</span> responses<span class="dots"></span></div>
+  <div class="loading-text">Reviewing submissions<span class="dots"></span></div>
 </div>
 
 <div id="conn-warn">Connection lost — retrying</div>
@@ -325,7 +325,6 @@
       const isLoading = d.synthesizing?.act1 || d.synthesizing?.act2 || d.synthesizing?.recipe;
       document.getElementById('loading').classList.toggle('active', isLoading);
       if (isLoading) {
-        document.getElementById('loading-count').textContent = d.count.careers + d.count.questions;
       }
 
       // World map — keep both 3D globe + flat SVG in sync with location data
