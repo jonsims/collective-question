@@ -85,3 +85,44 @@
 3. Wake the Render dyno ~5 min before the actual event Friday
 4. Do a dry run on the projector in Winn Auditorium — verify globe renders, fonts are readable
 5. Update Quick Start Guide and testing guide to reflect the 5-question form and new world_map/recipe states
+
+---
+
+## 2026-04-10 — Day-of polish for the Launch Babson event
+
+**Files reviewed:** public/display.html, public/admin.html, server.js, production state on Render
+
+**Work completed this session:**
+- Confirmed Render service IS deployed at https://collective-question.onrender.com — all routes return 200
+- Ran full production smoke test: page routes, static assets, API endpoints, auth, 100 concurrent submissions (100% success, 177ms avg), all three synthesis endpoints in parallel (Act 1 ~8s, Act 2 ~8s, Recipe ~14s)
+- Switched globe from night (dark) to day texture on white background — earth-day.jpg (239KB) vendored locally. Red dots with white stroke, green atmosphere glow.
+- Added new display state `world_map_svg` — flat equirectangular map using CSS background-image + SVG dot overlay (maximum browser compatibility). Now accessible as a separate admin button ("Flat Map") alongside "3D Globe".
+- Fixed init race condition on globe: location data cached in `lastLocationPoints`, applied after `initGlobe()` completes. `pointsData()` now always pushed on poll when globeReady, not just on data change. Wait for `window.load` before init with 300ms delay.
+- Rewrote flat map rendering: original SVG `<image>` embed had spotty PC browser support (older Edge rendered blank). Replaced with CSS `background-image: url('/lib/earth-day.jpg')` on a positioned div + absolute-positioned SVG overlay for dots. Both layers use matching aspect-ratio fitting so dots align.
+- Fixed loading overlay text: used to say "Reading 250 responses" which summed careers + questions (double-counting). Now says "Reviewing submissions..." with animated dots, no count.
+- Added node engine spec (implicit via render.yaml, NODE_VERSION: "22").
+
+**Files updated:**
+- public/display.html — flat map rewrite, globe white/day mode, loading overlay text, init race fix
+- public/admin.html — new "3D Globe" + "Flat Map" buttons in Act 1 section, STATE_LABELS updated
+- server.js — added `world_map_svg` to valid display states whitelist
+- CLAUDE.md — updated vendored files, display state count (9 → 10), world map description
+- public/lib/earth-day.jpg — added (239KB)
+
+**Commits (this session):**
+- 7c859ce Add Flat Map display + switch globe to day mode on white background
+- 8108f72 Fix: globe points not appearing after init race condition
+- 138756c Fix: flat map not rendering on PC browsers
+- 78a5f7a Fix: loading overlay says 'Reviewing submissions' instead of inflated count
+
+**Known issues / not yet done:**
+- earth-night.jpg is still in `public/lib/` but unused — can be removed to save 698KB on deploy (non-urgent)
+- No documented minimum Node version in package.json (specified only via render.yaml NODE_VERSION)
+- No automated tests — manual smoke tests only
+
+**Recommended next actions for next session:**
+1. After the event, remove unused earth-night.jpg to slim the repo
+2. Rotate the ANTHROPIC_API_KEY (has been visible in terminal screenshots)
+3. Consider adding a minimal health check endpoint (currently `/api/state` serves this purpose)
+4. Post-event: archive the repo or reset test data for reuse in future events
+5. Document what went well/poorly during the actual event for the next iteration

@@ -37,11 +37,12 @@ On Render, these are set as environment variables in the dashboard.
 **Three pages served as static HTML from `public/`:**
 - `submit.html` — mobile-first form with 5 searchable inputs: career, location, talent, food, question. Inline error handling, 10s fetch timeout, double-submit prevention.
 - `admin.html` — light-themed control panel with PIN gate. Layout top-to-bottom: projector controls + live preview (iframe), live response stats, AI generation button, recipe generation, data panels (career chart, location chart, talents, foods), questions list, danger zone.
-- `display.html` — full-screen projector view with 9 visual states, polls `/api/state` every 2 seconds, 5s fetch timeout. All text minimum 1.5rem for 50+ foot readability.
+- `display.html` — full-screen projector view with 10 visual states, polls `/api/state` every 2 seconds, 5s fetch timeout. All text minimum 1.5rem for 50+ foot readability.
 
 **Vendored libraries** in `public/lib/` (no CDN dependencies):
 - `globe.gl.min.js` — 1.7MB, 3D globe rendering for the world_map state
-- `earth-night.jpg` — 698KB, earth texture used by the globe
+- `earth-day.jpg` — 239KB, day-side earth texture (used by both 3D globe and flat map)
+- `earth-night.jpg` — 698KB, night-side earth texture (legacy, unused)
 
 **AI synthesis via Claude API (`claude-sonnet-4-6`):**
 - Single "Generate All" button runs Act 1 + Act 2 in parallel via `Promise.allSettled`
@@ -55,13 +56,14 @@ On Render, these are set as environment variables in the dashboard.
 **Key patterns:**
 - Admin auth: PIN via `x-admin-pin` header. No session/JWT.
 - Display coordination: Admin sets `displayState` via POST, display page picks it up on next poll.
-- Valid states: `collection`, `career_chart`, `world_map`, `act1_synthesis`, `raw_questions`, `clusters`, `meta_question`, `outlier`, `recipe`
+- Valid states: `collection`, `career_chart`, `world_map`, `world_map_svg`, `act1_synthesis`, `raw_questions`, `clusters`, `meta_question`, `outlier`, `recipe` (10 total)
 - Career whitelist: `VALID_CAREERS` Set — server rejects unlisted values
 - Location whitelist: `LOCATION_BY_NAME` Map (from `locations.js`) — server rejects unlisted values
 - Input limits: talent 200 chars, food 100 chars, question 500 chars, max 500 submissions, 10kb body limit
 - Between-session reset: `POST /api/admin/next-session` with `{ confirm: true }`
 - Live preview: admin embeds `/display` in a scaled iframe (no extra server code)
-- World map: globe.gl renders 3D primary; SVG fallback activates if globe fails to initialize. Both use lat/lng from `locations.js`.
+- World map: two independent display states — `world_map` (3D globe via globe.gl on white background, day texture, red dots) and `world_map_svg` (flat equirectangular map using CSS background-image + SVG dot overlay, works on any browser). Both use lat/lng from `locations.js`. Globe uses an init-time race-safe pattern: points are pushed on every poll after globeReady, and cached points are applied when globe finishes initializing.
+- Loading overlay during synthesis says "Reviewing submissions..." (animated dots, no count — previous "Reading N responses" double-counted careers + questions).
 
 **Load-tested:** 150 concurrent submissions complete in 31ms with zero failures (avg latency 16ms).
 
@@ -81,9 +83,10 @@ server.js                  — Express server, all routes, synthesis logic, test
 locations.js               — 165 US states + countries with lat/lng centroids
 public/submit.html         — Student submission form (mobile, 5 questions)
 public/admin.html          — Presenter control panel (light mode, with projector preview)
-public/display.html        — Projector display (9 states, full-screen)
+public/display.html        — Projector display (10 states, full-screen)
 public/lib/globe.gl.min.js — Vendored globe.gl library (1.7MB)
-public/lib/earth-night.jpg — Vendored earth texture (698KB)
+public/lib/earth-day.jpg   — Vendored day earth texture (239KB, used by globe + flat map)
+public/lib/earth-night.jpg — Vendored night earth texture (698KB, legacy)
 render.yaml                — Render deployment blueprint
 Quick Start Guide.md       — How to run the app for the event
 testing guide.md           — How to test locally
