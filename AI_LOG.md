@@ -126,3 +126,52 @@
 3. Consider adding a minimal health check endpoint (currently `/api/state` serves this purpose)
 4. Post-event: archive the repo or reset test data for reuse in future events
 5. Document what went well/poorly during the actual event for the next iteration
+
+---
+
+## 2026-04-10 (later) — Pre-event reliability pass
+
+**Files reviewed:** Full multi-agent code review on server.js, admin.html, display.html, submit.html, render.yaml, locations.js, Quick Start Guide.md, CLAUDE.md
+
+**Work completed this session:**
+- Ran three parallel code review agents with different perspectives: server reliability, client-side reliability, and operational reliability
+- Agents identified ~40 combined issues ranked from CRITICAL to LOW for today's live event
+- Applied three low-risk fixes that multiple agents flagged as most impactful:
+  1. `pollInFlight` guard in display.html — prevents two 2-second polls from overlapping (was causing potential chart jitter on slow responses)
+  2. `refreshInFlight` guard in admin.html — same pattern for the admin panel
+  3. 5-second AbortController timeout on `/api/locations` fetch in submit.html — previously had no timeout, so if hung, students could not submit
+- Verified locally (all routes 200) and on Render production (Monitor confirmed deploy)
+
+**Commits (this session):**
+- 2f60bb8 Reliability: guard against overlapping polls and slow location fetch
+
+**Files updated:**
+- public/display.html — pollInFlight variable + guard in poll()
+- public/admin.html — refreshInFlight variable + guard in refresh()
+- public/submit.html — wrapped locations fetch in AbortController with 5s timeout
+- CLAUDE.md — documented polling guards in Key Patterns section
+
+**Agent-identified issues NOT addressed** (deferred to post-event or manual mitigation):
+- In-memory state race on concurrent submissions (Node single-thread makes push operations atomic in practice; load test showed 0 failures at 150 concurrent)
+- No graceful SIGTERM shutdown (Render restart would drop in-flight requests — cost is acceptable)
+- No persistence — server crash = full data loss (manual mitigation: screenshot admin panel between acts)
+- Admin DOM accumulation over long sessions (noticeable only after 30+ min, 500+ entries)
+- No exponential backoff on connection failures (just noisy, not breaking)
+- Display polls every 2s is fine; admin polls every 2s ditto
+- Greedy regex in parseClaudeJSON (has 3-strategy fallback already)
+
+**Pre-event mitigations (no code changes needed):**
+1. Warm Render dyno 5 min before doors (click Load Test Data → Generate All → Next Session)
+2. Test display on actual projector before doors — all 10 states
+3. Sticky note: "CLICK NEXT SESSION BEFORE GROUP 2"
+4. Open Render dashboard Logs tab in second browser tab for debugging
+5. Ethernet or phone hotspot for laptop, not auditorium wifi
+6. ALWAYS read synthesis results in admin before clicking the matching display state (sanity check for inappropriate AI output)
+
+**Recommended next actions for next session:**
+1. After event, remove unused earth-night.jpg (save 698KB)
+2. Rotate ANTHROPIC_API_KEY (exposed in screenshots)
+3. Add SIGTERM graceful shutdown handler
+4. Consider file-based session snapshot every 30s for crash recovery
+5. Add exponential backoff on connection failures
+6. Post-event: archive repo or reset for future events

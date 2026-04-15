@@ -74,7 +74,8 @@ On Render, these are set as environment variables in the dashboard.
 - Must work on flaky auditorium Wi-Fi. No external CDN dependencies. QR code generated locally.
 - Students fill out form in ~30 seconds while standing. Keep submission path minimal.
 - Admin operates under pressure mid-presentation. Controls are descriptive, grouped by act, with a live projector preview. Destructive actions in a separate "Danger Zone."
-- All fetch calls have AbortController timeouts (5s display, 8s admin, 10s submit).
+- All fetch calls have AbortController timeouts (5s display + locations, 8s admin, 10s submit).
+- Polling loops have in-flight guards (`pollInFlight` on display, `refreshInFlight` on admin) so two 2-second-interval polls can never run concurrently — prevents UI jitter on slow responses.
 
 ## Files
 
