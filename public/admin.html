@@ -257,6 +257,7 @@
 <script>
   let pin = '';
   let pollInterval;
+  let refreshInFlight = false;
 
   const STATE_LABELS = {
     collection: 'QR Code', career_chart: 'Career Chart',
@@ -300,6 +301,8 @@
   }
 
   async function refresh() {
+    if (refreshInFlight) return;
+    refreshInFlight = true;
     try {
       const r = await adminFetch('/api/admin/data', { headers: { 'x-admin-pin': pin } });
       if (r.status === 401) { clearInterval(pollInterval); location.reload(); return; }
@@ -308,6 +311,8 @@
       updateUI(d);
     } catch {
       document.getElementById('conn-dot').className = 'conn-dot offline';
+    } finally {
+      refreshInFlight = false;
     }
   }
 

@@ -147,12 +147,20 @@
     let VALID_LOCATIONS = [];
     let submitting = false;
 
-    // Load locations from server
-    fetch('/api/locations').then(r => r.json()).then(list => {
-      VALID_LOCATIONS = list;
-      const dl = document.getElementById('location-list');
-      dl.innerHTML = list.map(name => `<option value="${name.replace(/"/g, '&quot;')}">`).join('');
-    }).catch(() => {});
+    // Load locations from server (with 5s timeout)
+    (function loadLocations() {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      fetch('/api/locations', { signal: controller.signal })
+        .then(r => r.json())
+        .then(list => {
+          VALID_LOCATIONS = list;
+          const dl = document.getElementById('location-list');
+          dl.innerHTML = list.map(name => `<option value="${name.replace(/"/g, '&quot;')}">`).join('');
+        })
+        .catch(() => {})
+        .finally(() => clearTimeout(timeout));
+    })();
 
     document.getElementById('talent').addEventListener('input', function() {
       document.getElementById('talent-count').textContent = this.value.length;

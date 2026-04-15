@@ -244,6 +244,7 @@
   let lastLocationKey = '';
   let lastLocationPoints = [];
   let globeHasPoints = false;
+  let pollInFlight = false;
 
   // Initialize globe.gl. If it fails, the world_map screen will be empty
   // but the world_map_svg screen will still work as an alternative.
@@ -312,6 +313,8 @@
   }
 
   async function poll() {
+    if (pollInFlight) return;
+    pollInFlight = true;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     try {
@@ -451,6 +454,7 @@
       document.getElementById('conn-warn').style.display = 'block';
     } finally {
       clearTimeout(timeout);
+      pollInFlight = false;
     }
   }
 
