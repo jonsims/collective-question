@@ -22,6 +22,12 @@
       -webkit-appearance: none; appearance: none; font-family: inherit;
     }
     input[type="text"]:focus, textarea:focus { border-color: #006341; }
+    select {
+      width: 100%; padding: 13px 16px; font-size: 1rem;
+      border: 2px solid #ddd; border-radius: 10px; background: white;
+      color: #1A1A1A; outline: none; font-family: inherit;
+    }
+    select:focus { border-color: #006341; }
     textarea { resize: none; height: 90px; }
     .char-count { font-size: 0.72rem; color: #aaa; text-align: right; margin-top: 3px; }
     .optional { font-size: 0.72rem; color: #aaa; font-weight: 400; margin-left: 6px; }
@@ -45,87 +51,43 @@
 
   <div class="form" id="form">
     <div class="q-block">
-      <label class="q-label" for="career"><span class="q-num">1</span>What career did you want at age 8?</label>
-      <span class="q-hint">Start typing to search, then pick one</span>
-      <input type="text" id="career" list="career-list" placeholder="e.g. Astronaut, Veterinarian, Chef..." autocomplete="off" required>
-      <datalist id="career-list">
-        <option value="Astronaut">
-        <option value="Veterinarian">
-        <option value="Doctor">
-        <option value="Lawyer">
-        <option value="Teacher">
-        <option value="Firefighter">
-        <option value="Police Officer">
-        <option value="Chef">
-        <option value="Artist">
-        <option value="Singer">
-        <option value="Dancer">
-        <option value="Actor">
-        <option value="Athlete (general)">
-        <option value="Soccer Player">
-        <option value="Basketball Player">
-        <option value="Baseball Player">
-        <option value="Gymnast">
-        <option value="Swimmer">
-        <option value="Marine Biologist">
-        <option value="Scientist">
-        <option value="Inventor">
-        <option value="Architect">
-        <option value="Engineer">
-        <option value="Pilot">
-        <option value="Princess / Prince">
-        <option value="Superhero">
-        <option value="Zookeeper">
-        <option value="Paleontologist (dinosaur stuff)">
-        <option value="Spy">
-        <option value="Race Car Driver">
-        <option value="Fashion Designer">
-        <option value="Photographer">
-        <option value="Writer">
-        <option value="YouTuber / Influencer">
-        <option value="Video Game Designer">
-        <option value="Animator">
-        <option value="Musician">
-        <option value="Painter">
-        <option value="Baker / Pastry Chef">
-        <option value="President of the United States">
-        <option value="Nurse">
-        <option value="Therapist">
-        <option value="Carpenter">
-        <option value="Marine (military)">
-        <option value="Astronomer">
-        <option value="Magician">
-        <option value="Ballerina">
-        <option value="Journalist">
-        <option value="Entrepreneur">
-        <option value="Other">
-      </datalist>
+      <label class="q-label" for="career"><span class="q-num">1</span>How comfortable are you with AI?</label>
+      <span class="q-hint">Pick the one that fits right now — no judgment</span>
+      <select id="career" required>
+        <option value="" disabled selected>Choose one…</option>
+        <option value="Skeptic">Skeptic — not sold yet</option>
+        <option value="Curious but cautious">Curious but cautious</option>
+        <option value="Experimenting">Experimenting here and there</option>
+        <option value="Regular user">Regular user</option>
+        <option value="Daily in my workflow">Daily in my workflow</option>
+        <option value="All-in / I teach it">All-in — I teach it</option>
+      </select>
     </div>
 
     <div class="q-block">
-      <label class="q-label" for="location"><span class="q-num">2</span>Where are you from?</label>
+      <label class="q-label" for="location"><span class="q-num">2</span>Where do you teach?</label>
       <span class="q-hint">US state or country — start typing to search</span>
       <input type="text" id="location" list="location-list" placeholder="e.g. Massachusetts, India, Brazil..." autocomplete="off" required>
       <datalist id="location-list"></datalist>
     </div>
 
     <div class="q-block">
-      <label class="q-label" for="talent"><span class="q-num">3</span>What's your hidden talent?</label>
-      <span class="q-hint">e.g. "I can juggle" or "I make my own hot sauce"</span>
-      <input type="text" id="talent" maxlength="80" placeholder="Something most people don't know about you">
+      <label class="q-label" for="talent"><span class="q-num">3</span>One way you use AI — or want to</label>
+      <span class="q-hint">e.g. "drafting rubrics" or "honestly, I haven't started yet"</span>
+      <input type="text" id="talent" maxlength="80" placeholder="In your teaching, your work, anything">
       <div class="char-count"><span id="talent-count">0</span>/80</div>
     </div>
 
     <div class="q-block">
       <label class="q-label" for="food"><span class="q-num">4</span>What's your favorite food?</label>
-      <span class="q-hint">A dish, ingredient, comfort meal — anything</span>
-      <input type="text" id="food" maxlength="60" placeholder="e.g. Mom's lasagna, sushi, mango sticky rice...">
+      <span class="q-hint">For a fun AI experiment at the end — a dish, ingredient, anything</span>
+      <input type="text" id="food" maxlength="60" placeholder="e.g. lasagna, sushi, mango sticky rice...">
       <div class="char-count"><span id="food-count">0</span>/60</div>
     </div>
 
     <div class="q-block">
-      <label class="q-label" for="question"><span class="q-num">5</span>What do you want to ask us?</label>
-      <span class="q-hint">About AI, college, careers, us — anything. No wrong answers.</span>
+      <label class="q-label" for="question"><span class="q-num">5</span>Your biggest question or concern about AI</label>
+      <span class="q-hint">In teaching, your field, anything. No wrong answers.</span>
       <textarea id="question" maxlength="300" placeholder="What's on your mind?"></textarea>
       <div class="char-count"><span id="question-count">0</span>/300</div>
     </div>
@@ -143,7 +105,7 @@
   </div>
 
   <script>
-    const VALID_CAREERS = [...document.querySelectorAll('#career-list option')].map(o => o.value);
+    const VALID_CAREERS = [...document.querySelectorAll('#career option')].map(o => o.value).filter(Boolean);
     let VALID_LOCATIONS = [];
     let submitting = false;
 
@@ -186,17 +148,17 @@
       errorEl.style.display = 'none';
 
       if (!career) {
-        errorEl.textContent = 'Please pick what you wanted to be at age 8.';
+        errorEl.textContent = 'Please tell us how comfortable you are with AI.';
         errorEl.style.display = 'block';
         return;
       }
       if (!VALID_CAREERS.includes(career)) {
-        errorEl.textContent = 'Please pick a career from the list.';
+        errorEl.textContent = 'Please pick one of the comfort options.';
         errorEl.style.display = 'block';
         return;
       }
       if (!location) {
-        errorEl.textContent = 'Please tell us where you\'re from.';
+        errorEl.textContent = 'Please tell us where you teach.';
         errorEl.style.display = 'block';
         return;
       }
@@ -206,7 +168,7 @@
         return;
       }
       if (!talent) {
-        errorEl.textContent = 'Tell us your hidden talent.';
+        errorEl.textContent = 'Tell us one way you use AI — or want to.';
         errorEl.style.display = 'block';
         return;
       }
@@ -216,7 +178,7 @@
         return;
       }
       if (!question) {
-        errorEl.textContent = 'Ask us anything in question 5.';
+        errorEl.textContent = 'Share a question or concern in question 5.';
         errorEl.style.display = 'block';
         return;
       }

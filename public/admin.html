@@ -134,7 +134,7 @@
           <div class="section-label">Act 1 — Fun Reveal</div>
           <div class="display-grid">
             <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">QR Code</button>
-            <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">Career Chart</button>
+            <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">Comfort Chart</button>
             <button class="display-btn" data-state="world_map" onclick="setDisplay('world_map')">3D Globe</button>
             <button class="display-btn" data-state="world_map_svg" onclick="setDisplay('world_map_svg')">Flat Map</button>
             <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">Portrait</button>
@@ -162,7 +162,7 @@
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
         <div>
           <h2 style="margin-bottom:0">Live Responses</h2>
-          <p class="panel-desc" style="margin-bottom:0">Updates automatically as students submit.</p>
+          <p class="panel-desc" style="margin-bottom:0">Updates automatically as participants submit.</p>
         </div>
         <div class="next-session-bar">
           <button class="btn btn-green" id="next-session-btn" onclick="showNextSessionConfirm()" style="font-size:0.8rem; padding:8px 14px;">Next Session</button>
@@ -174,18 +174,18 @@
         <button class="btn btn-gray" onclick="hideNextSessionConfirm()">Cancel</button>
       </div>
       <div class="stats">
-        <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Submissions</div></div>
+        <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Responses</div></div>
         <div class="stat"><div class="stat-num" id="stat-locations">0</div><div class="stat-label">Locations</div></div>
-        <div class="stat"><div class="stat-num" id="stat-talents">0</div><div class="stat-label">Talents</div></div>
+        <div class="stat"><div class="stat-num" id="stat-talents">0</div><div class="stat-label">AI Uses</div></div>
         <div class="stat"><div class="stat-num" id="stat-foods">0</div><div class="stat-label">Foods</div></div>
-        <div class="stat"><div class="stat-num" id="stat-questions">0</div><div class="stat-label">Questions</div></div>
+        <div class="stat"><div class="stat-num" id="stat-questions">0</div><div class="stat-label">Concerns</div></div>
       </div>
     </div>
 
     <!-- AI Generation -->
     <div class="panel full-col">
       <h2>AI Generation</h2>
-      <p class="panel-desc">One click: AI reads all submissions and generates the career one-liner, talent portrait, question themes, the meta question, and a surprise question. Takes about 15-20 seconds.</p>
+      <p class="panel-desc">One click: AI reads all responses and generates the comfort one-liner, "how this room uses AI" portrait, concern themes, the meta question, and a surprise question. Takes about 15-20 seconds.</p>
       <div class="readiness" id="act1-readiness"></div>
       <div class="readiness" id="act2-readiness"></div>
       <button class="btn btn-green btn-block" id="generate-btn" onclick="generateAll()">Generate All AI Content</button>
@@ -201,7 +201,7 @@
     <!-- Bonus: Recipe -->
     <div class="panel full-col">
       <h2>Bonus: AI Recipe From Favorite Foods</h2>
-      <p class="panel-desc">Optional fun finale: AI invents an absurd recipe using as many of the students' favorite foods as possible. Takes ~15 seconds.</p>
+      <p class="panel-desc">Optional fun finale: AI invents an absurd recipe using as many of the room's favorite foods as possible. Takes ~15 seconds.</p>
       <div class="readiness" id="recipe-readiness"></div>
       <button class="btn btn-green btn-block" id="recipe-btn" onclick="generateRecipe()">Generate Recipe</button>
       <div class="synth-error" id="recipe-error"></div>
@@ -210,20 +210,20 @@
 
     <!-- Data panels side by side -->
     <div class="panel">
-      <h2>Career Distribution</h2>
-      <p class="panel-desc">What students wanted to be at age 8. Top 10 shown.</p>
+      <h2>AI Comfort</h2>
+      <p class="panel-desc">How comfortable the room is with AI. Top 10 shown.</p>
       <div id="career-chart"></div>
     </div>
 
     <div class="panel">
       <h2>Locations</h2>
-      <p class="panel-desc">Where students are from. Top 10 shown.</p>
+      <p class="panel-desc">Where participants teach. Top 10 shown.</p>
       <div id="location-chart"></div>
     </div>
 
     <div class="panel">
-      <h2>Hidden Talents</h2>
-      <p class="panel-desc">What students said about themselves.</p>
+      <h2>How They Use AI</h2>
+      <p class="panel-desc">What participants said about using AI — or wanting to.</p>
       <div class="talent-list" id="talent-list"></div>
     </div>
 
@@ -233,10 +233,10 @@
       <div class="talent-list" id="food-list"></div>
     </div>
 
-    <!-- Questions -->
+    <!-- Questions / concerns -->
     <div class="panel full-col">
-      <h2>Student Questions (<span id="q-count">0</span>)</h2>
-      <p class="panel-desc">Everything students asked. Delete any inappropriate ones before generating.</p>
+      <h2>Questions &amp; Concerns (<span id="q-count">0</span>)</h2>
+      <p class="panel-desc">Everything the room asked. Delete any inappropriate ones before generating.</p>
       <div class="q-list" id="q-list"></div>
     </div>
 
@@ -260,7 +260,7 @@
   let refreshInFlight = false;
 
   const STATE_LABELS = {
-    collection: 'QR Code', career_chart: 'Career Chart',
+    collection: 'QR Code', career_chart: 'Comfort Chart',
     world_map: '3D Globe', world_map_svg: 'Flat Map',
     act1_synthesis: 'Portrait', raw_questions: 'All Questions',
     clusters: 'Themes', meta_question: 'The Question', outlier: 'Surprise Q',

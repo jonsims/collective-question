@@ -145,9 +145,9 @@
   <div class="fallback-url" id="fallback-url"></div>
 </div>
 
-<!-- Career Chart -->
+<!-- Career Chart (now: AI comfort) -->
 <div class="screen" id="screen-career_chart">
-  <h2>What did you want to be at age 8?</h2>
+  <h2>How comfortable are we with AI?</h2>
   <div class="chart-container" id="career-chart-display"></div>
 </div>
 
@@ -160,13 +160,13 @@
 
 <!-- Raw Questions -->
 <div class="screen" id="screen-raw_questions">
-  <h2>What you wanted to ask us</h2>
+  <h2>Your questions &amp; concerns about AI</h2>
   <div class="q-scroll" id="raw-q-list"></div>
 </div>
 
 <!-- Clusters -->
 <div class="screen" id="screen-clusters">
-  <h2>Your questions fall into…</h2>
+  <h2>What this room is asking about…</h2>
   <div class="clusters-grid" id="clusters-display"></div>
 </div>
 
@@ -186,8 +186,8 @@
 <!-- World Map (3D Globe) -->
 <div class="screen" id="screen-world_map">
   <div class="map-header">
-    <h2>Where you're from</h2>
-    <p id="map-subtitle">0 students, 0 places</p>
+    <h2>Where we teach</h2>
+    <p id="map-subtitle">0 educators, 0 places</p>
   </div>
   <div id="globe-container"></div>
   <div class="map-stats">
@@ -198,8 +198,8 @@
 <!-- World Map (Flat, always available as alternative) -->
 <div class="screen" id="screen-world_map_svg">
   <div class="map-header">
-    <h2>Where you're from</h2>
-    <p id="map-subtitle-svg">0 students, 0 places</p>
+    <h2>Where we teach</h2>
+    <p id="map-subtitle-svg">0 educators, 0 places</p>
   </div>
   <div class="flat-map-container">
     <svg viewBox="0 0 2000 1000" preserveAspectRatio="xMidYMid meet">
@@ -347,9 +347,9 @@
           lastLocationKey = key;
           updateFlatMapDots(d.locationPoints);
 
-          const totalStudents = d.count.locations || 0;
+          const totalEducators = d.count.locations || 0;
           const uniquePlaces = d.locationPoints.length;
-          const subtitleText = `${totalStudents} students from ${uniquePlaces} places`;
+          const subtitleText = `${totalEducators} educators from ${uniquePlaces} places`;
           document.getElementById('map-subtitle').textContent = subtitleText;
           document.getElementById('map-subtitle-svg').textContent = subtitleText;
           const top = d.locationPoints.slice(0, 6).map(p =>

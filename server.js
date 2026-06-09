@@ -18,17 +18,19 @@ app.get('/submit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'su
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
 
-// ─── Career whitelist ────────────────────────────────────────────────────────
+// ─── Comfort-with-AI whitelist ───────────────────────────────────────────────
+// NOTE: internally still called "career" throughout (session.careers,
+// careerDistribution, {career, count}) to avoid renaming the load-tested
+// machinery. The values are now AI-comfort levels. These MUST match the
+// <select> options in submit.html exactly.
 
-const VALID_CAREERS = new Set([
-  "Astronaut","Veterinarian","Doctor","Lawyer","Teacher","Firefighter","Police Officer",
-  "Chef","Artist","Singer","Dancer","Actor","Athlete (general)","Soccer Player",
-  "Basketball Player","Baseball Player","Gymnast","Swimmer","Marine Biologist","Scientist",
-  "Inventor","Architect","Engineer","Pilot","Princess / Prince","Superhero","Zookeeper",
-  "Paleontologist (dinosaur stuff)","Spy","Race Car Driver","Fashion Designer","Photographer",
-  "Writer","YouTuber / Influencer","Video Game Designer","Animator","Musician","Painter",
-  "Baker / Pastry Chef","President of the United States","Nurse","Therapist","Carpenter",
-  "Marine (military)","Astronomer","Magician","Ballerina","Journalist","Entrepreneur","Other"
+const VALID_COMFORT = new Set([
+  "Skeptic",
+  "Curious but cautious",
+  "Experimenting",
+  "Regular user",
+  "Daily in my workflow",
+  "All-in / I teach it",
 ]);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -148,9 +150,9 @@ app.get('/api/locations', (req, res) => {
 app.post('/api/submit', (req, res) => {
   const { career, location, talent, food, question } = req.body;
 
-  // Validate career
-  if (!career || !VALID_CAREERS.has(career)) {
-    return res.status(400).json({ error: 'Invalid career selection' });
+  // Validate comfort level (still sent as "career" by the form)
+  if (!career || !VALID_COMFORT.has(career)) {
+    return res.status(400).json({ error: 'Invalid comfort selection' });
   }
   // Validate location (now required)
   if (!location || !LOCATION_BY_NAME.has(location)) {
@@ -270,60 +272,50 @@ app.post('/api/admin/load-test-data', (req, res) => {
   if (!checkPin(req, res)) return;
   resetSession();
 
-  const careerPicks = ["Veterinarian","Astronaut","Veterinarian","Doctor","Marine Biologist","Princess / Prince","Firefighter","Chef","Artist","YouTuber / Influencer","Lawyer","Scientist","Dancer","President of the United States","Architect","Singer","Engineer","Teacher","Police Officer","Zookeeper","Painter","Fashion Designer","Race Car Driver","Pilot","Nurse","Superhero","Paleontologist (dinosaur stuff)","Spy","Gymnast","Writer","Veterinarian","Marine Biologist","Soccer Player","Chef","Astronaut","Basketball Player","Musician","Fashion Designer","Inventor","Doctor","Zookeeper","Photographer","Actor","Entrepreneur","Scientist","Video Game Designer","Animator","Therapist","Carpenter","Astronaut","Marine Biologist","Doctor","Teacher","Artist","Chef","Athlete (general)","Singer","Lawyer","Veterinarian","Pilot","Dancer","Architect","Scientist","YouTuber / Influencer","Chef","Doctor","Astronaut","Marine Biologist","Soccer Player","Writer","Nurse","Engineer","Fashion Designer","Entrepreneur","Painter","Gymnast","Actor","Firefighter","Marine Biologist","President of the United States","Musician","Architect","Artist","Veterinarian","Teacher"];
-
-  const talentList = ["I can solve a Rubik's cube in under 2 minutes","I speak three languages fluently","I can juggle five objects","I do calligraphy","I can beatbox","I know every country capital in the world","I can do a backflip","I make pottery","I play competitive chess","I bake sourdough from scratch","I draw hyperrealistic portraits","I do magic tricks","I can play four instruments","I've been doing stand-up comedy since I was 15","I memorize pi to 50 digits","I can identify almost any bird by its call","I repair vintage watches","I speed-type at 130 WPM","I do impressions of celebrities","I write poetry but never show anyone","I can whistle extremely loudly","I'm a certified scuba diver","I make my own hot sauce","I fold origami cranes while watching TV","I was in a viral TikTok and I'm not telling you which one","I play the theremin","I do competitive jigsaw puzzles","I knit while listening to lectures","I've memorized the NATO phonetic alphabet","I can hold my breath for 3 minutes","I moonlight as a wedding DJ","I trained a dog to do 40+ tricks","I'm a ranked competitive Scrabble player","I make short films on weekends","I play piano but only when no one is listening","I built my own PC at age 12","I can parallel park on the first try every time","I grow my own vegetables","I can draw most countries from memory","I've read over 200 books in the last three years","I can fall asleep in under 3 minutes anywhere","I won a regional math competition in middle school","I taught English abroad last summer","I can name every Pokémon from the original 151","I learned to code at age 10","I was a competitive fencer for 6 years","I make and sell my own candles","I speak conversational Japanese from watching anime","I can do a one-handed cartwheel","I repair old furniture and resell it","I'm a licensed drone pilot","I compete in pub trivia leagues","I paint murals on weekends","I built a website at 13 that got 10k monthly visitors","I play cello but it doesn't feel like a talent it's just a thing I do","I make beats on GarageBand","I competed nationally in debate","I can ice skate backwards","I'm a certified yoga instructor","I do archery","I can name every country by its flag","I know Morse code","I've been doing robotics since 7th grade","I make my own jewelry","I've done two half marathons","I paint watercolors I've never shown anyone","I can do mental math very fast","I can read upside-down text easily","I do improv comedy","I can identify designers by their fonts","I taught myself lockpicking","I collect vintage sneakers","I've been a volunteer EMT since I was 16","I can type without looking at the keyboard","I have never lost at Mario Kart","I secretly love doing taxes","I learned to drive a manual car before an automatic","I have a photographic memory for song lyrics","I can fall asleep on any flight no matter how short"];
-
-  const questionList = ["Will AI make my degree worthless before I even graduate?","How do you use AI in your own classes?","Should I be scared of AI or excited about it?","Is it cheating to use ChatGPT on assignments?","How is Babson different from other business schools when it comes to AI?","What's The Generator and how do I get involved?","Do professors actually use AI themselves or just tell us not to?","What's the most useful thing AI can do for a college student?","Will AI replace strategy consultants?","How do you know when AI is wrong?","What majors are most protected from AI disruption?","Can AI help me write better or does it just write for me?","Do you think AI will change what it means to get a business degree?","What tools do you actually recommend students use?","Is there an AI policy at Babson?","How do I use AI without losing my own voice as a writer?","Will companies even care if I know how to use AI?","What's the difference between using AI as a tool vs. depending on it?","What's one thing AI cannot do that humans can?","How has AI changed the way you teach?","Do you think AI is overhyped?","What should I learn in college that AI can't learn for me?","Will AI get better at predicting the future than humans?","How do I become someone who uses AI well instead of badly?","Is AI going to change what business strategy means?","Can AI help with starting a business in FME?","What's the most important skill to develop alongside AI?","Do you think AI is good for creativity or bad for it?","How do you use AI for research without plagiarizing?","What's an example of a time AI surprised you?","Should I learn to code even if I'm a business major?","What do employers think about students who use AI?","Will AI make it easier or harder to start a business?","How do you teach critical thinking when AI can answer everything?","What's the best way to learn prompt engineering?","Can AI help me figure out what career I want?","How do I know if AI output is actually good quality?","What's your biggest worry about students using AI?","Is AI going to make internships more competitive?","How has AI changed how you grade?","Can AI help with group projects?","What's the most common mistake students make with AI?","Is there a version of AI use that's always okay vs. never okay?","Do you think AI will change what entrepreneurship looks like?","How do you stay current on AI when it changes so fast?","What should I know about AI before I start college?","Will AI be able to teach college courses?","How do you feel about students using AI on exams?","What's the most interesting AI tool you've used recently?","Can AI help with networking and career stuff?","Do you think future leaders need to understand AI?","How do you use AI in your writing process?","What's the difference between AI making you smarter vs. making you lazy?","Is AI going to make it harder or easier to get a job after graduation?","What do you wish you knew about AI 5 years ago?","How do I avoid becoming dependent on AI?","What's the best AI tool for business students right now?","Can AI help me understand financial statements?","How should I think about AI as a first-gen college student?","Do you think AI will change the Babson curriculum?","How do I use AI to practice for interviews?","Will AI change what it means to be a good writer?","Can AI help me choose my concentration?","How do you use AI to prepare for class?","What's one AI tool every college student should know?","Do you think AI is more useful for creative work or analytical work?","How do you make sure students are still learning when AI can do the work?","Can AI help with studying for exams?","How do I know when to trust AI and when to verify it?","What's the relationship between AI and entrepreneurship at Babson?","Do you worry that AI will make students less curious?","How do you use AI to give feedback on student writing?","What's the most common misconception about AI you hear from students?","Is AI better at strategy than humans yet?","How do I develop my own judgment when AI is always available?","What does it mean to be AI literate?","Can AI help with public speaking?","Do you think AI makes business more ethical or less ethical?","How is AI changing the finance industry?","What's the hardest part of using AI responsibly?","Can AI help me with the FME course?","How do you balance using AI with developing your own skills?","What's one thing AI is genuinely terrible at?","Can I use AI to help me write my college papers?","How do you think about AI and originality?","Will AI change how companies are organized?","Do you use AI for your own research?","How do I get good at AI without a technical background?","What's the most exciting thing happening in AI right now?","Do you think students should take AI ethics courses?","Can AI help with marketing for a small business?","How do you handle it when a student submits AI-written work?","How do I use AI to accelerate my learning without replacing it?","What questions should I be asking about AI that I'm not asking?","Is there a community at Babson for students who are really into AI?","How do you teach strategy differently because of AI?","What's the most surprising thing AI has taught you about your own field?","What's the right mindset for a student entering college right now?","Is coding still worth learning for business students?","Do you think AI will make human creativity more or less valuable?","What's one way AI has made your job harder?","How do you think about AI and academic integrity?","Do you think the hype around AI is justified?","What do I need to know about AI to be competitive when I graduate?","Do you think AI will change what leadership means?","Can AI help me write a business plan?","What's the most interesting AI use case you've seen from students?","How do you stay skeptical about AI without falling behind?","What's one thing about AI that you think is genuinely scary?","How do I know if I'm using AI as a crutch?","What's the most important question about AI that nobody is asking?","Do you think AI will change what it means to be educated?","How do you teach writing in an age when AI can write?","Can AI help me figure out whether my business idea is good?","Do you think AI makes students more or less confident?","How has AI changed what employers want from Babson graduates?","What's the best way to practice using AI so I get good at it?","Can AI help with time management?","What's one thing you'd tell an incoming student about AI that nobody else will tell them?","What's the most underrated AI tool for college students?","How do you use AI to develop better questions, not just answers?","Do you think AI will change the startup ecosystem?","How do I use AI to learn something I'm struggling with?","What's the most human thing about the way you teach?","What's the best way to stay current on AI as a non-technical person?","Do you think students who are good at using AI have an unfair advantage?","What's your favorite example of AI being used in a creative way?","How does AI fit into the Babson entrepreneurial mindset?","What's the most important thing to understand about how AI actually works?","What's one AI skill that will still matter in 20 years?","Do you think AI will change what kinds of people succeed in business?","How do you use AI to help you make better decisions?","What's the weirdest way you've used AI?","Do you think AI is going to be net positive or net negative for society?","What's the most misunderstood thing about AI?","How do you keep students from just copying AI output?","Can AI help me figure out what I want to do with my life?","How do you use AI to save time without cutting corners?","What's something AI can do that still amazes you?","Can AI help me write better emails and professional communications?","What's the difference between AI and automation?","How has AI changed what it means to do good research?","What's one thing you'd tell us to stop worrying about when it comes to AI?","How do you use AI to get unstuck when you're working on something hard?","How do you think about AI and privacy?","What's one thing about AI that gives you genuine hope?","How do you teach students to be critical of AI output?","What's the most important question to ask before using AI for any task?","What's the relationship between AI and the kind of thinking Babson tries to develop?","Do you think AI will make college more or less important?","What's something you've changed your mind about regarding AI?","How do you use AI as a sparring partner for your own ideas?","What's the single most useful thing I could do with AI in my first semester?","How do you think about AI and the things that make us human?","Is there anything about how Babson handles AI that you're especially proud of?","Will AI change what it means to be an entrepreneur?","What advice would you give a student who is afraid of being left behind on AI?","How do you make sure your own thinking doesn't get replaced by AI?","What's one thing AI does poorly that I might not expect?","What's the most important habit to develop around AI use?","What's the biggest gap between how AI is portrayed in the media and what it actually is?","Do you think students who grow up with AI will think differently than those who didn't?","How do you think about the relationship between AI and human judgment?","Do you think AI will change what makes a great college experience?","What's the first thing I should do with AI when I get to Babson?"];
-
-  // Locations — biased toward US east coast (Babson is in MA) but with diverse international representation
-  const locationList = [
-    "Massachusetts","Massachusetts","Massachusetts","Massachusetts","Massachusetts","Massachusetts","Massachusetts","Massachusetts",
-    "New York","New York","New York","New York","New York","New York","New York",
-    "Connecticut","Connecticut","Connecticut","Connecticut","Connecticut",
-    "New Jersey","New Jersey","New Jersey","New Jersey",
-    "California","California","California","California","California",
-    "Florida","Florida","Florida","Florida",
-    "Texas","Texas","Texas",
-    "Pennsylvania","Pennsylvania","Pennsylvania",
-    "Illinois","Illinois",
-    "Maryland","Maryland",
-    "Virginia","Virginia",
-    "Washington","Georgia","North Carolina","Ohio","Michigan",
-    "Colorado","Arizona","Minnesota","Wisconsin",
-    "Rhode Island","New Hampshire","Maine","Vermont",
-    // International — strong Asia, some Europe, some LATAM, some Africa
-    "China","China","China","China","China","China",
-    "India","India","India","India","India",
-    "South Korea","South Korea","South Korea",
-    "Vietnam","Vietnam",
-    "Japan","Japan",
-    "Hong Kong","Taiwan",
-    "Singapore","Thailand","Indonesia","Philippines","Malaysia",
-    "Pakistan","Bangladesh","Sri Lanka","Nepal",
-    "United Kingdom","United Kingdom","France","Germany","Italy","Spain",
-    "Netherlands","Switzerland","Sweden","Ireland",
-    "Brazil","Mexico","Mexico","Colombia","Argentina","Chile","Peru",
-    "Canada","Canada","Canada",
-    "United Arab Emirates","Saudi Arabia","Israel","Turkey","Egypt",
-    "Nigeria","Kenya","Ghana","South Africa",
-    "Australia","New Zealand"
+  // AI-comfort levels (stored as "career"). Weighted like a real room of
+  // entrepreneurship educators: a curious/experimenting middle, a few skeptics,
+  // a handful all-in. ~35 entries to mirror a 30-person session.
+  const careerPicks = [
+    "Curious but cautious","Experimenting","Curious but cautious","Regular user","Experimenting",
+    "Skeptic","Experimenting","Daily in my workflow","Curious but cautious","Experimenting",
+    "Regular user","Curious but cautious","Experimenting","All-in / I teach it","Regular user",
+    "Curious but cautious","Daily in my workflow","Experimenting","Skeptic","Regular user",
+    "Curious but cautious","Experimenting","Daily in my workflow","Regular user","Curious but cautious",
+    "All-in / I teach it","Experimenting","Regular user","Curious but cautious","Daily in my workflow",
+    "Skeptic","Experimenting","Regular user","All-in / I teach it","Daily in my workflow",
   ];
 
+  // "One way I use AI — or want to" (stored as "talent"). Realistic, varied,
+  // honest answers from entrepreneurship educators.
+  const talentList = ["Drafting rubrics and assignment prompts","Generating case discussion questions","First-pass feedback on rough drafts","Building syllabi faster","I haven't really started, honestly","Brainstorming venture ideas with my class","Summarizing long research papers","Making practice quizzes","Role-playing investor pitches with my class","Translating course materials into other languages","I want to use it for grading but I'm nervous","Coding small classroom tools without knowing how to code","Lesson planning at 11pm","Turning my lectures into study guides","Writing the emails I don't want to write","Generating examples on the fly when someone's stuck","Market research for early-stage ventures","Designing better experiential exercises","Creating personas for customer-discovery practice","Using it as a thought partner when I'm stuck","Building financial models with my teams","Making my dense slides actually readable","I want to but I don't know where to start","Checking my own writing for clarity","Simulating tough customer conversations","Grant proposal first drafts","Explaining one concept five different ways","Honestly, just to feel less behind","Mock interviews before career fairs","Cleaning up messy survey data from class projects"];
+
+  // Questions and concerns about AI (stored as "question"), from entrepreneurship
+  // educators. ~36 entries — realistic worries plus genuine curiosity.
+  const questionList = ["How do I keep my class from just outsourcing the thinking?","Will AI make the skills I teach obsolete?","How do I grade fairly when I can't tell what's AI-written?","What's the right AI policy for an experiential course?","Am I falling behind the people I teach on this?","How do I teach entrepreneurship when AI can write the whole business plan?","Is it cheating if my class uses AI for customer discovery?","How do I use AI without losing the human relationship in the classroom?","What should I require my class to learn versus let AI handle?","How do I stay current when the tools change every month?","Will my institution support this or punish it?","How do I model good AI use instead of just banning it?","What's the most useful AI tool for a non-technical professor?","How do I assess learning when the output looks the same either way?","Does using AI to grade undermine my credibility?","How do I help skeptical colleagues get on board?","Where's the line between a tool and a crutch in the classroom?","How do I redesign assignments so AI makes them better, not pointless?","Is there a privacy risk in putting other people's work into these tools?","How do I teach judgment when answers are basically free?","What will employers actually expect our graduates to know about AI?","How do I keep the entrepreneurial 'doing' when AI removes the friction?","Should every course have an AI component now?","How do I avoid sounding out of touch to the people I teach?","What's a realistic first step for someone who's nervous?","How do I evaluate which AI tools are worth class time?","Will AI widen the gap between those who can afford the best tools?","How do I protect deep work and reflection in an AI world?","What part of my teaching should I never hand to AI?","How do I get my whole department speaking the same language on this?","Is it okay that I find this exciting and scary at the same time?","What's the most common mistake educators make with AI right now?","How do I make room for this without adding ten hours to my week?","Are we preparing graduates for a world that won't exist by the time they finish?","How do I teach originality when remixing is so easy?","How do I help my class use AI ethically without becoming the police?"];
+
+  // Locations — "where do you teach," sized to ~34 to match a 30-person room.
+  // US-heavy with some international spread so the map still reads well.
+  const locationList = [
+    "Massachusetts","Massachusetts","Massachusetts","Massachusetts",
+    "New York","New York","New York",
+    "California","California","California",
+    "Texas","Texas",
+    "Florida","Florida",
+    "Illinois","Illinois",
+    "Pennsylvania","Georgia","North Carolina","Ohio","Michigan",
+    "Colorado","Washington","Minnesota",
+    // International
+    "United Kingdom","Canada","Canada","India","India",
+    "China","Mexico","Brazil","Germany","Singapore"
+  ];
+
+  // Favorite foods — ~34 entries, varied enough for an absurd recipe.
   const foodList = [
-    "Pizza","Sushi","Tacos","Pasta","Ramen","Burgers","Fried chicken","Mac and cheese",
-    "Pho","Pad Thai","Biryani","Butter chicken","Tikka masala","Dumplings","Bao buns","Korean BBQ",
-    "Bibimbap","Tonkatsu","Tempura","Curry","Chicken tikka","Shawarma","Falafel","Hummus",
-    "Pizza","Sushi","Tacos","Mom's lasagna","Grandma's biryani","Bagels","Bacon","Steak",
-    "Eggs benedict","Pancakes","Waffles","Avocado toast","Acai bowls","Smoothies","Smoothie bowls",
-    "Mango sticky rice","Boba tea","Bubble tea","Matcha lattes","Iced coffee","Croissants",
-    "Brownies","Chocolate chip cookies","Ice cream","Cheesecake","Tiramisu","Crème brûlée","Mochi",
-    "Birthday cake","Donuts","Cinnamon rolls","Apple pie","Banana bread",
-    "Chick-fil-A","In-N-Out","Chipotle","Five Guys","Shake Shack","Halal cart chicken and rice",
-    "Dim sum","Hot pot","Korean fried chicken","Empanadas","Arepas","Ceviche","Tamales","Pupusas",
-    "Jollof rice","Injera with stews","Tagine","Couscous","Pierogi","Borscht","Goulash",
-    "Caesar salad","Pesto pasta","Carbonara","Lobster roll","Clam chowder","Fish and chips",
-    "Buffalo wings","Nachos","Quesadillas","Burritos","Crepes","Paella","Risotto"
+    "Pizza","Sushi","Tacos","Pasta","Ramen","Burgers","Mac and cheese",
+    "Pho","Pad Thai","Biryani","Dumplings","Korean BBQ","Bagels","Avocado toast",
+    "Iced coffee","Croissants","Chocolate chip cookies","Ice cream","Cheesecake","Tiramisu",
+    "Chipotle","Five Guys","Dim sum","Hot pot","Empanadas","Ceviche","Tamales",
+    "Jollof rice","Caesar salad","Carbonara","Lobster roll","Clam chowder","Nachos","Burritos"
   ];
 
   session.careers = careerPicks;
@@ -356,19 +348,21 @@ app.post('/api/admin/synthesize/act1', async (req, res) => {
       .map(({ career, count }) => `${career}: ${count}`).join(', ');
     const talents = session.talents.join('\n');
 
-    const prompt = `You are helping two college professors do a quick, fun reveal at an admitted student day for incoming college students.
+    const prompt = `You are helping a facilitator run a quick, fun live reveal during a session for a room of entrepreneurship educators (college faculty and program directors). The room just shared how comfortable they are with AI and one way they already use it (or wish they could).
 
 Here is what the room submitted:
 
-Age-8 career dreams (most common picks): ${dist}
-Hidden talents (all responses):
+Self-reported AI comfort levels (distribution): ${dist}
+"One way I use AI — or want to" (all responses):
 ${talents}
 
 Write exactly two things:
 
-1. One punchy sentence (under 25 words) reacting to the career distribution — something specific and a little funny. Reference actual numbers if interesting.
+1. One punchy sentence (under 25 words) reacting to the comfort distribution — warm and a little funny, no shaming the skeptics. Reference actual numbers if interesting.
 
-2. One short paragraph (3-4 sentences, under 80 words) that synthesizes the hidden talents into a portrait of who is in this room. Be warm and specific. Find the surprising thing underneath the obvious ones. The last sentence should be the one that makes the room go quiet.
+2. One short paragraph (3-4 sentences, under 80 words) that synthesizes the "how I use AI" responses into a portrait of where this room of educators actually is with AI right now. Be warm and specific. Find the surprising thing underneath the obvious ones. The last sentence should be the one that makes the room go quiet.
+
+Style note: the people in this room are educators, not students — never refer to them as students. Avoid the word "student" or "students" entirely; if you need to mention the people they teach, say "their classes" or "the people they teach."
 
 Return ONLY valid JSON with no extra text, no markdown, no code fences:
 {"career_line":"...","talent_portrait":"..."}`;
@@ -400,20 +394,22 @@ app.post('/api/admin/synthesize/act2', async (req, res) => {
   try {
     const questions = session.questions.map((q, i) => `${i + 1}. ${q.text}`).join('\n');
 
-    const prompt = `You are helping two college professors analyze questions from a room of admitted college students at an admitted student day. The professors teach Strategy and Writing/English at a business college and lead a co-curricular AI program called The Generator.
+    const prompt = `You are helping a facilitator analyze the questions and concerns about AI submitted by a room of entrepreneurship educators (college faculty and program directors) during a live session.
 
-Here are all submitted questions:
+Here are all submitted questions and concerns:
 ${questions}
 
 Please do the following:
 
-1. GROUP the questions into 3-4 thematic clusters. Give each cluster a short label (3-5 words) and a count.
+1. GROUP them into 3-4 thematic clusters. Give each cluster a short label (3-5 words) and a count.
 
 2. SYNTHESIZE one "meta question" (under 20 words) — the single question that, if answered well, speaks to the most people in the room, including those who didn't know how to phrase what they were feeling.
 
 3. Write a brief rationale (under 30 words) explaining why this question captures the room.
 
 4. SURFACE one "outlier question" — too specific or too different to fit, but worth noting. Add a brief note (under 20 words) on why it stood out.
+
+Style note: the people in this room are educators, not students — never refer to them as students. Avoid the word "student" or "students" entirely; if you need to mention the people they teach, say "their classes" or "the people they teach." You may lightly paraphrase an example_question to honor this, but keep its meaning.
 
 Return ONLY valid JSON with no extra text, no markdown, no code fences:
 {"clusters":[{"label":"...","count":N,"example_question":"..."}],"meta_question":"...","meta_question_rationale":"...","outlier_question":"...","outlier_note":"..."}`;
@@ -445,9 +441,9 @@ app.post('/api/admin/synthesize/recipe', async (req, res) => {
   try {
     const foods = session.foods.join(', ');
 
-    const prompt = `You are a wildly creative chef helping two college professors at an admitted student day. The room of incoming college students just submitted their favorite foods. Your job is to invent an absurd, ambitious recipe that uses as many of these ingredients/dishes as possible — even if it shouldn't work.
+    const prompt = `You are a wildly creative chef helping a facilitator close out a live session for a room of entrepreneurship educators. The room just submitted their favorite foods. Your job is to invent an absurd, ambitious recipe that uses as many of these ingredients/dishes as possible — even if it shouldn't work. (It's a playful demo of generative AI, so lean into the fun.)
 
-Favorite foods from the room (${session.foods.length} students):
+Favorite foods from the room (${session.foods.length} educators):
 ${foods}
 
 Create a recipe that:
@@ -457,7 +453,7 @@ Create a recipe that:
 - Has 5-7 brief, confident steps (under 25 words each)
 - Ends with a single funny tasting note
 
-This is meant to be entertaining, not realistic. Lean into the chaos. Be bold. Be specific. Reference the actual foods students mentioned.
+This is meant to be entertaining, not realistic. Lean into the chaos. Be bold. Be specific. Reference the actual foods the room mentioned.
 
 Return ONLY valid JSON with no extra text, no markdown, no code fences:
 {"name":"...","tagline":"...","ingredients":["...","..."],"steps":["...","..."],"tasting_note":"...","foods_used":N}`;
