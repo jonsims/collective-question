@@ -131,15 +131,15 @@
       <div class="projector-layout">
         <div class="projector-controls">
           <div class="current-state-banner">Now showing: <span id="current-state-label">QR / Collection</span></div>
-          <div class="section-label">Act 1 — Fun Reveal</div>
+          <div class="section-label">Act 1 — The Room</div>
           <div class="display-grid">
             <button class="display-btn" data-state="collection" onclick="setDisplay('collection')">QR Code</button>
-            <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">Comfort Chart</button>
+            <button class="display-btn" data-state="career_chart" onclick="setDisplay('career_chart')">AI Maturity</button>
             <button class="display-btn" data-state="world_map" onclick="setDisplay('world_map')">3D Globe</button>
             <button class="display-btn" data-state="world_map_svg" onclick="setDisplay('world_map_svg')">Flat Map</button>
             <button class="display-btn" data-state="act1_synthesis" onclick="setDisplay('act1_synthesis')">Portrait</button>
           </div>
-          <div class="section-label">Act 2 — The Big Question</div>
+          <div class="section-label">Act 2 — The Core Question</div>
           <div class="display-grid">
             <button class="display-btn" data-state="raw_questions" onclick="setDisplay('raw_questions')">All Questions</button>
             <button class="display-btn" data-state="clusters" onclick="setDisplay('clusters')">Themes</button>
@@ -176,16 +176,16 @@
       <div class="stats">
         <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Responses</div></div>
         <div class="stat"><div class="stat-num" id="stat-locations">0</div><div class="stat-label">Locations</div></div>
-        <div class="stat"><div class="stat-num" id="stat-talents">0</div><div class="stat-label">AI Uses</div></div>
+        <div class="stat"><div class="stat-num" id="stat-talents">0</div><div class="stat-label">AI Tasks</div></div>
         <div class="stat"><div class="stat-num" id="stat-foods">0</div><div class="stat-label">Foods</div></div>
-        <div class="stat"><div class="stat-num" id="stat-questions">0</div><div class="stat-label">Concerns</div></div>
+        <div class="stat"><div class="stat-num" id="stat-questions">0</div><div class="stat-label">Questions</div></div>
       </div>
     </div>
 
     <!-- AI Generation -->
     <div class="panel full-col">
       <h2>AI Generation</h2>
-      <p class="panel-desc">One click: AI reads all responses and generates the comfort one-liner, "how this room uses AI" portrait, concern themes, the meta question, and a surprise question. Takes about 15-20 seconds.</p>
+      <p class="panel-desc">One click: AI reads all responses and generates the AI-maturity one-liner, a portrait of where the room would put AI to work, the question segments, the core question, and a surprise question. Takes about 15-20 seconds.</p>
       <div class="readiness" id="act1-readiness"></div>
       <div class="readiness" id="act2-readiness"></div>
       <button class="btn btn-green btn-block" id="generate-btn" onclick="generateAll()">Generate All AI Content</button>
@@ -210,20 +210,20 @@
 
     <!-- Data panels side by side -->
     <div class="panel">
-      <h2>AI Comfort</h2>
-      <p class="panel-desc">How comfortable the room is with AI. Top 10 shown.</p>
+      <h2>AI in Our Orgs</h2>
+      <p class="panel-desc">Where AI sits in the room's organizations. Top 10 shown.</p>
       <div id="career-chart"></div>
     </div>
 
     <div class="panel">
       <h2>Locations</h2>
-      <p class="panel-desc">Where participants teach. Top 10 shown.</p>
+      <p class="panel-desc">Where the room is from. Top 10 shown.</p>
       <div id="location-chart"></div>
     </div>
 
     <div class="panel">
-      <h2>How They Use AI</h2>
-      <p class="panel-desc">What participants said about using AI — or wanting to.</p>
+      <h2>Where They'd Use AI</h2>
+      <p class="panel-desc">Decisions &amp; tasks the room would hand to AI.</p>
       <div class="talent-list" id="talent-list"></div>
     </div>
 
@@ -233,9 +233,9 @@
       <div class="talent-list" id="food-list"></div>
     </div>
 
-    <!-- Questions / concerns -->
+    <!-- Questions on AI & innovation -->
     <div class="panel full-col">
-      <h2>Questions &amp; Concerns (<span id="q-count">0</span>)</h2>
+      <h2>Questions on AI &amp; Innovation (<span id="q-count">0</span>)</h2>
       <p class="panel-desc">Everything the room asked. Delete any inappropriate ones before generating.</p>
       <div class="q-list" id="q-list"></div>
     </div>
@@ -260,7 +260,7 @@
   let refreshInFlight = false;
 
   const STATE_LABELS = {
-    collection: 'QR Code', career_chart: 'Comfort Chart',
+    collection: 'QR Code', career_chart: 'AI Maturity',
     world_map: '3D Globe', world_map_svg: 'Flat Map',
     act1_synthesis: 'Portrait', raw_questions: 'All Questions',
     clusters: 'Themes', meta_question: 'The Question', outlier: 'Surprise Q',

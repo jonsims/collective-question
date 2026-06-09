@@ -18,19 +18,19 @@ app.get('/submit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'su
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
 
-// ─── Comfort-with-AI whitelist ───────────────────────────────────────────────
+// ─── Org-AI-maturity whitelist ───────────────────────────────────────────────
 // NOTE: internally still called "career" throughout (session.careers,
 // careerDistribution, {career, count}) to avoid renaming the load-tested
-// machinery. The values are now AI-comfort levels. These MUST match the
-// <select> options in submit.html exactly.
+// machinery. The values are now "where AI sits in your organization" levels.
+// These MUST match the <select> options in submit.html exactly.
 
-const VALID_COMFORT = new Set([
-  "Skeptic",
-  "Curious but cautious",
-  "Experimenting",
-  "Regular user",
-  "Daily in my workflow",
-  "All-in / I teach it",
+const VALID_MATURITY = new Set([
+  "Not on our radar",
+  "Exploring",
+  "Piloting",
+  "Scaling",
+  "Embedded",
+  "Leading",
 ]);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -150,9 +150,9 @@ app.get('/api/locations', (req, res) => {
 app.post('/api/submit', (req, res) => {
   const { career, location, talent, food, question } = req.body;
 
-  // Validate comfort level (still sent as "career" by the form)
-  if (!career || !VALID_COMFORT.has(career)) {
-    return res.status(400).json({ error: 'Invalid comfort selection' });
+  // Validate AI-maturity level (still sent as "career" by the form)
+  if (!career || !VALID_MATURITY.has(career)) {
+    return res.status(400).json({ error: 'Invalid selection' });
   }
   // Validate location (now required)
   if (!location || !LOCATION_BY_NAME.has(location)) {
@@ -272,28 +272,29 @@ app.post('/api/admin/load-test-data', (req, res) => {
   if (!checkPin(req, res)) return;
   resetSession();
 
-  // AI-comfort levels (stored as "career"). Weighted like a real room of
-  // entrepreneurship educators: a curious/experimenting middle, a few skeptics,
-  // a handful all-in. ~35 entries to mirror a 30-person session.
+  // Org-AI-maturity levels (stored as "career"). Weighted like a real room of
+  // leaders: an exploring/piloting middle, a few not-yet-started, a handful
+  // scaling/embedded, a couple leading. ~35 entries to mirror a 30-person room.
   const careerPicks = [
-    "Curious but cautious","Experimenting","Curious but cautious","Regular user","Experimenting",
-    "Skeptic","Experimenting","Daily in my workflow","Curious but cautious","Experimenting",
-    "Regular user","Curious but cautious","Experimenting","All-in / I teach it","Regular user",
-    "Curious but cautious","Daily in my workflow","Experimenting","Skeptic","Regular user",
-    "Curious but cautious","Experimenting","Daily in my workflow","Regular user","Curious but cautious",
-    "All-in / I teach it","Experimenting","Regular user","Curious but cautious","Daily in my workflow",
-    "Skeptic","Experimenting","Regular user","All-in / I teach it","Daily in my workflow",
+    "Exploring","Piloting","Exploring","Scaling","Piloting",
+    "Not on our radar","Exploring","Embedded","Exploring","Piloting",
+    "Scaling","Exploring","Piloting","Leading","Scaling",
+    "Exploring","Embedded","Piloting","Not on our radar","Scaling",
+    "Exploring","Piloting","Embedded","Scaling","Exploring",
+    "Leading","Piloting","Exploring","Piloting","Embedded",
+    "Not on our radar","Exploring","Scaling","Leading","Exploring",
   ];
 
-  // "One way I use AI — or want to" (stored as "talent"). Realistic, varied,
-  // honest answers from entrepreneurship educators.
-  const talentList = ["Drafting rubrics and assignment prompts","Generating case discussion questions","First-pass feedback on rough drafts","Building syllabi faster","I haven't really started, honestly","Brainstorming venture ideas with my class","Summarizing long research papers","Making practice quizzes","Role-playing investor pitches with my class","Translating course materials into other languages","I want to use it for grading but I'm nervous","Coding small classroom tools without knowing how to code","Lesson planning at 11pm","Turning my lectures into study guides","Writing the emails I don't want to write","Generating examples on the fly when someone's stuck","Market research for early-stage ventures","Designing better experiential exercises","Creating personas for customer-discovery practice","Using it as a thought partner when I'm stuck","Building financial models with my teams","Making my dense slides actually readable","I want to but I don't know where to start","Checking my own writing for clarity","Simulating tough customer conversations","Grant proposal first drafts","Explaining one concept five different ways","Honestly, just to feel less behind","Mock interviews before career fairs","Cleaning up messy survey data from class projects"];
+  // "One decision or task you'd hand to AI tomorrow" (stored as "talent").
+  // Realistic, varied answers from leaders — decision-making, customer insight,
+  // industry/innovation flavored.
+  const talentList = ["First-draft competitive analysis","Synthesize customer interview notes","Spot patterns in churn data","Generate customer personas","Scenario planning for a big bet","Pressure-test a pricing decision","Draft board-meeting talking points","Summarize a long market research report","Screen new product ideas fast","Write the first version of a strategy memo","Triage my overflowing inbox","Turn messy survey data into themes","Draft customer-segment profiles","Stress-test assumptions before a launch","Map our competitors' recent moves","Brainstorm names for a new offering","Prep questions for a customer discovery call","Forecast demand under a few scenarios","Draft a job description","Find the story buried in a quarter of metrics","Role-play a tough negotiation","Cut a 30-page report down to one page","Generate counterarguments to my own plan","Draft investor-update emails","Sketch a go-to-market plan","Analyze open-ended feedback at scale","Draft a press release","Compare vendor proposals side by side","Simulate an angry-customer call","Turn a whiteboard photo into a project brief"];
 
-  // Questions and concerns about AI (stored as "question"), from entrepreneurship
-  // educators. ~36 entries — realistic worries plus genuine curiosity.
-  const questionList = ["How do I keep my class from just outsourcing the thinking?","Will AI make the skills I teach obsolete?","How do I grade fairly when I can't tell what's AI-written?","What's the right AI policy for an experiential course?","Am I falling behind the people I teach on this?","How do I teach entrepreneurship when AI can write the whole business plan?","Is it cheating if my class uses AI for customer discovery?","How do I use AI without losing the human relationship in the classroom?","What should I require my class to learn versus let AI handle?","How do I stay current when the tools change every month?","Will my institution support this or punish it?","How do I model good AI use instead of just banning it?","What's the most useful AI tool for a non-technical professor?","How do I assess learning when the output looks the same either way?","Does using AI to grade undermine my credibility?","How do I help skeptical colleagues get on board?","Where's the line between a tool and a crutch in the classroom?","How do I redesign assignments so AI makes them better, not pointless?","Is there a privacy risk in putting other people's work into these tools?","How do I teach judgment when answers are basically free?","What will employers actually expect our graduates to know about AI?","How do I keep the entrepreneurial 'doing' when AI removes the friction?","Should every course have an AI component now?","How do I avoid sounding out of touch to the people I teach?","What's a realistic first step for someone who's nervous?","How do I evaluate which AI tools are worth class time?","Will AI widen the gap between those who can afford the best tools?","How do I protect deep work and reflection in an AI world?","What part of my teaching should I never hand to AI?","How do I get my whole department speaking the same language on this?","Is it okay that I find this exciting and scary at the same time?","What's the most common mistake educators make with AI right now?","How do I make room for this without adding ten hours to my week?","Are we preparing graduates for a world that won't exist by the time they finish?","How do I teach originality when remixing is so easy?","How do I help my class use AI ethically without becoming the police?"];
+  // Questions about AI's role in decision-making & innovation (stored as
+  // "question"), from a room of leaders. ~36 entries — strategic, candid, varied.
+  const questionList = ["Where does AI actually improve a decision versus just speed it up?","How do I trust AI insight from data I can't fully verify?","What's AI's real role in our innovation process?","Which decisions should never be delegated to AI?","How do I tell signal from confident nonsense?","How do we keep human judgment central as we scale AI?","What's the first process I should put AI into?","How do I get my leadership team aligned on AI?","How do we measure whether AI is actually creating value?","What customer questions can AI answer that we can't today?","How do I avoid automating a bad process faster?","Where's the line between augmenting people and replacing them?","How do we protect proprietary data when using these tools?","What does an 'AI strategy' even mean for a company our size?","How do I bring skeptical leaders along?","How do we move from pilots to real adoption?","What's the biggest mistake leaders make adopting AI?","How do I keep us from falling behind competitors on this?","Can AI really generate customer insight, or just summarize?","How do I know if an AI-generated analysis is any good?","What should I stop doing now that AI can do it?","How do we build AI literacy across the whole organization?","Where will AI reshape our industry first?","How do I balance moving fast with moving responsibly?","What's a realistic 12-month AI roadmap?","How do we use AI without all sounding the same?","What decisions are leaders too quick to hand to AI?","How do I use AI without eroding my team's skills?","Is AI a sustaining or a disruptive force in our market?","How do we govern AI use without killing experimentation?","What's the ROI question I should actually be asking about AI?","How do I separate AI hype from what's real for us?","Where does AI create advantage versus just become table stakes?","How do we keep customers' trust as we lean on AI more?","What part of our strategy should never be handed to AI?","How do I help my organization innovate with AI, not just adopt it?"];
 
-  // Locations — "where do you teach," sized to ~34 to match a 30-person room.
+  // Locations — "where's your hometown," sized to ~34 to match a 30-person room.
   // US-heavy with some international spread so the map still reads well.
   const locationList = [
     "Massachusetts","Massachusetts","Massachusetts","Massachusetts",
@@ -348,21 +349,21 @@ app.post('/api/admin/synthesize/act1', async (req, res) => {
       .map(({ career, count }) => `${career}: ${count}`).join(', ');
     const talents = session.talents.join('\n');
 
-    const prompt = `You are helping a facilitator run a quick, fun live reveal during a session for a room of entrepreneurship educators (college faculty and program directors). The room just shared how comfortable they are with AI and one way they already use it (or wish they could).
+    const prompt = `You are helping the facilitator of "Leading With AI," a live session for a room of leaders exploring how to use AI in decision-making and innovation. The room just shared where AI sits in their organization today and one decision or task they'd hand to AI tomorrow. This reveal is itself a live demo of AI-powered audience insight — turning the room's raw responses into insight in real time.
 
 Here is what the room submitted:
 
-Self-reported AI comfort levels (distribution): ${dist}
-"One way I use AI — or want to" (all responses):
+Where AI sits in their organizations (distribution): ${dist}
+"One decision or task I'd hand to AI tomorrow" (all responses):
 ${talents}
 
 Write exactly two things:
 
-1. One punchy sentence (under 25 words) reacting to the comfort distribution — warm and a little funny, no shaming the skeptics. Reference actual numbers if interesting.
+1. One punchy sentence (under 25 words) reacting to the AI-maturity distribution — warm and a little funny, no shaming the cautious. Reference actual numbers if interesting.
 
-2. One short paragraph (3-4 sentences, under 80 words) that synthesizes the "how I use AI" responses into a portrait of where this room of educators actually is with AI right now. Be warm and specific. Find the surprising thing underneath the obvious ones. The last sentence should be the one that makes the room go quiet.
+2. One short paragraph (3-4 sentences, under 80 words) that synthesizes the responses into a sharp, insightful portrait of how this room of leaders wants to put AI to work — the kind of read a great customer-insight analyst would surface from open-ended data. Be warm and specific. Find the surprising thing underneath the obvious ones. The last sentence should be the one that makes the room go quiet.
 
-Style note: the people in this room are educators, not students — never refer to them as students. Avoid the word "student" or "students" entirely; if you need to mention the people they teach, say "their classes" or "the people they teach."
+Style note: the people in this room are leaders, not students — never refer to them as students.
 
 Return ONLY valid JSON with no extra text, no markdown, no code fences:
 {"career_line":"...","talent_portrait":"..."}`;
@@ -394,14 +395,14 @@ app.post('/api/admin/synthesize/act2', async (req, res) => {
   try {
     const questions = session.questions.map((q, i) => `${i + 1}. ${q.text}`).join('\n');
 
-    const prompt = `You are helping a facilitator analyze the questions and concerns about AI submitted by a room of entrepreneurship educators (college faculty and program directors) during a live session.
+    const prompt = `You are helping the facilitator of "Leading With AI," a live session for a room of leaders. They each submitted their biggest question about AI's role in decision-making and innovation. Your job is to turn these open-ended responses into insight in real time — the way a sharp customer-insight analyst clusters qualitative data into segments.
 
-Here are all submitted questions and concerns:
+Here are all submitted questions:
 ${questions}
 
 Please do the following:
 
-1. GROUP them into 3-4 thematic clusters. Give each cluster a short label (3-5 words) and a count.
+1. GROUP them into 3-4 thematic clusters (the "segments" of what this room cares about). Give each cluster a short label (3-5 words) and a count.
 
 2. SYNTHESIZE one "meta question" (under 20 words) — the single question that, if answered well, speaks to the most people in the room, including those who didn't know how to phrase what they were feeling.
 
@@ -409,7 +410,7 @@ Please do the following:
 
 4. SURFACE one "outlier question" — too specific or too different to fit, but worth noting. Add a brief note (under 20 words) on why it stood out.
 
-Style note: the people in this room are educators, not students — never refer to them as students. Avoid the word "student" or "students" entirely; if you need to mention the people they teach, say "their classes" or "the people they teach." You may lightly paraphrase an example_question to honor this, but keep its meaning.
+Style note: the people in this room are leaders, not students — never refer to them as students.
 
 Return ONLY valid JSON with no extra text, no markdown, no code fences:
 {"clusters":[{"label":"...","count":N,"example_question":"..."}],"meta_question":"...","meta_question_rationale":"...","outlier_question":"...","outlier_note":"..."}`;
@@ -441,9 +442,9 @@ app.post('/api/admin/synthesize/recipe', async (req, res) => {
   try {
     const foods = session.foods.join(', ');
 
-    const prompt = `You are a wildly creative chef helping a facilitator close out a live session for a room of entrepreneurship educators. The room just submitted their favorite foods. Your job is to invent an absurd, ambitious recipe that uses as many of these ingredients/dishes as possible — even if it shouldn't work. (It's a playful demo of generative AI, so lean into the fun.)
+    const prompt = `You are a wildly creative chef helping the facilitator close out "Leading With AI," a session for a room of leaders. The room just submitted their favorite foods. Your job is to invent an absurd, ambitious new dish — pitch it like a bold product innovation — that uses as many of these ingredients/dishes as possible, even if it shouldn't work. (It's a playful demo of generative AI's creative side, so lean into the fun.)
 
-Favorite foods from the room (${session.foods.length} educators):
+Favorite foods from the room (${session.foods.length} leaders):
 ${foods}
 
 Create a recipe that:
