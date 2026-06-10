@@ -65,10 +65,9 @@
     </div>
 
     <div class="q-block">
-      <label class="q-label" for="location"><span class="q-num">2</span>Where's your hometown?</label>
-      <span class="q-hint">State or country — start typing to search</span>
-      <input type="text" id="location" list="location-list" placeholder="e.g. Massachusetts, India, Brazil..." autocomplete="off" required>
-      <datalist id="location-list"></datalist>
+      <label class="q-label" for="location"><span class="q-num">2</span>Where would you like to visit?</label>
+      <span class="q-hint">Anywhere in the world — just type it in</span>
+      <input type="text" id="location" maxlength="60" placeholder="e.g. Tokyo, Patagonia, a beach in Bali..." autocomplete="off" required>
     </div>
 
     <div class="q-block">
@@ -101,7 +100,6 @@
     <h2>You're in the room.</h2>
     <p>Your answers are now part of the mix. In a few minutes we'll show what AI does with all of them.</p>
     <p class="count-msg" id="count-msg"></p>
-    <div class="next">Put your phone down and watch the screen — that's where the interesting part happens.</div>
   </div>
 
   <script>
@@ -158,12 +156,7 @@
         return;
       }
       if (!location) {
-        errorEl.textContent = 'Please tell us where you\'re from.';
-        errorEl.style.display = 'block';
-        return;
-      }
-      if (VALID_LOCATIONS.length && !VALID_LOCATIONS.includes(location)) {
-        errorEl.textContent = 'Please pick a location from the list.';
+        errorEl.textContent = 'Please tell us where you would like to visit.';
         errorEl.style.display = 'block';
         return;
       }

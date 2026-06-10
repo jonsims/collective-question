@@ -154,9 +154,9 @@ app.post('/api/submit', (req, res) => {
   if (!career || !VALID_MATURITY.has(career)) {
     return res.status(400).json({ error: 'Invalid selection' });
   }
-  // Validate location (now required)
-  if (!location || !LOCATION_BY_NAME.has(location)) {
-    return res.status(400).json({ error: 'Invalid location' });
+  // "Where would you like to visit" — free text, just required
+  if (!location || typeof location !== 'string' || !location.trim()) {
+    return res.status(400).json({ error: 'Please tell us where you would like to visit' });
   }
   // Cap total submissions
   if (session.careers.length >= 500) {
@@ -164,7 +164,7 @@ app.post('/api/submit', (req, res) => {
   }
 
   session.careers.push(career);
-  session.locations.push(location);
+  session.locations.push(location.trim().slice(0, 60));
 
   if (talent && typeof talent === 'string') {
     const t = talent.trim().slice(0, 200);
