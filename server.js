@@ -122,6 +122,13 @@ function locationPoints() {
     .sort((a, b) => b.count - a.count);
 }
 
+function locationList() {
+  // ALL submitted destinations (incl. free-text), by frequency — for the list view
+  const counts = {};
+  session.locations.forEach(name => { counts[name] = (counts[name] || 0) + 1; });
+  return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+}
+
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 // QR code — generated locally, no external dependency
@@ -195,6 +202,7 @@ app.get('/api/state', (req, res) => {
     },
     careerDistribution: careerDistribution().slice(0, 12),
     locationPoints: locationPoints(),
+    locationList: locationList(),
     questions: session.questions,
     act1Result: session.act1Result,
     act2Result: session.act2Result,
